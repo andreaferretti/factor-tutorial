@@ -1,9 +1,9 @@
 A long Factor tutorial
 ======================
 
-Factor is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concept like reduce, higher-order functions or currying.
+Factor is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concepts like folding, higher-order functions or currying.
 
-Even if Factor is a rather niche language, it is mature and feature a comprehensive standard library covering tasks from json serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dinamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O, much like node, but with a much simpler model for cooperative multithreading.
+Even if Factor is a rather niche language, it is mature and feature a comprehensive standard library covering tasks from JSON serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dinamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O, much like node, but with a much simpler model for cooperative multithreading.
 
 In this tutorial, we assume that you have downloaded a copy of Factor and that you are following along with the examples in the Listener. The first paragraph gives some motivation for the use of the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.
 
