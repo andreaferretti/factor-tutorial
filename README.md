@@ -1,7 +1,9 @@
 A long Factor tutorial
 ======================
 
-Factor is a mature, high level programming language, but starting with it can be rather taxing, as it follows a paradigm quite far from most mainstream languages. Still, even if it is a rather niche language, it is rather mature, running in its own optimized VM, usually reaching top performance for a dinamically typed language. It features a flexible object system, a FFI with C, and asynchronous I/O, much like node, but with a much simpler model for cooperative multithreading.
+Factor is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power.
+
+Even if Factor is a rather niche language, it is mature and feature a comprehensive standard library covering tasks from json serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dinamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O, much like node, but with a much simpler model for cooperative multithreading.
 
 In this tutorial, we assume that you have downloaded a copy of Factor and that you are following along with the examples in the Listener.
 
@@ -149,7 +151,7 @@ This immediately shows that `n` is used in two places: as an upper bound for the
     10
     8
 
-To continue with our example, will need a word to test divisibility, and a quick search in the only help shows that `divisor?` is what we want. We will also need a way to make a range starting from `2`, which we can define like
+To continue with our example, will need a word to test divisibility, and a quick search in the online help shows that `divisor?` is what we want. We will also need a way to make a range starting from `2`, which we can define like
 
     : [2,b] ( n -- {2,...,n} ) 2 swap [a,b] ; inline
 
