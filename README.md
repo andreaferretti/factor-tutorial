@@ -1,7 +1,7 @@
 A long Factor tutorial
 ======================
 
-Factor is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power.
+Factor is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concept like reduce, higher-order functions or currying.
 
 Even if Factor is a rather niche language, it is mature and feature a comprehensive standard library covering tasks from json serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dinamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O, much like node, but with a much simpler model for cooperative multithreading.
 
