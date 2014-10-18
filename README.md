@@ -5,7 +5,7 @@ Factor is a mature, dynamically typed language based on the concatenative paradi
 
 Even if Factor is a rather niche language, it is mature and feature a comprehensive standard library covering tasks from json serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dinamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O, much like node, but with a much simpler model for cooperative multithreading.
 
-In this tutorial, we assume that you have downloaded a copy of Factor and that you are following along with the examples in the Listener.
+In this tutorial, we assume that you have downloaded a copy of Factor and that you are following along with the examples in the Listener. The first paragraph gives some motivation for the use of the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.
 
 Concatenative languages
 -----------------------
@@ -83,7 +83,7 @@ If we had written just `*`, Factor would have tried to apply multiplication to t
 
 Let us `drop` the result to empty the stack, and try writing what we have done so far in a single shot `10 [1,b] 1 [ * ] reduce`. This will output `3628800` as expected.
 
-We now want to define a word that can be called whenever we want. We will call our word `!` as it is customary. To define it, we need to use the word `:`. Then we put the name of the word being defined, the stack effects and finally the body, ending with the `;` word:
+We now want to define a word that can be called whenever we want. We will call our word `!` as it is customary. To define it, we need to use the word `:`. Then we put the name of the word being defined, the **stack effects** and finally the body, ending with the `;` word:
 
     : ! ( n -- n! ) [1,b] 1 [ * ] reduce ;
 
