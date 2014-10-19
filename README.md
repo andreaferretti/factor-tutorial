@@ -179,8 +179,8 @@ Notice that our `prime?` word uses two levels of quotation nesting. In general, 
 
 Many more combinators exists other than `bi` (and its relative `tri`), and you should become acquainted at least with `bi*` and `bi@`.
 
-Vocabularies and tests
-----------------------
+Vocabularies
+------------
 
 It is now time to start writing your functions in files and learn how to import them in the listener. Factor organizes words into nested namespaces called **vocabularies**. You can import all names from a vocabulary with the word `USE:`. In fact, you may have seen something like
 
@@ -245,6 +245,9 @@ After making this change and refreshed the vocabulary, you will see that the lis
 
 It is still possible to refer to words in private vocabularies, as you can confirm by searching for `[2,b]` in the online help, but of course this is discouraged, since people do not guarantee any API stability for private words. Words under `github.tutorial` can refer to words in `github.tutorial.private` directly, like `prime?` does.
 
+Tests and documentation
+-----------------------
+
 The object system and protocols
 -------------------------------
 
@@ -267,8 +270,11 @@ Input/Output
 Deploying programs
 ------------------
 
-Multithreading and processes
-----------------------------
+Multithreading
+--------------
 
 Servers and Furnace
 -------------------
+
+Processes and channels
+----------------------
