@@ -182,6 +182,69 @@ Many more combinators exists other than `bi` (and its relative `tri`), and you s
 Vocabularies and tests
 ----------------------
 
+It is now time to start writing your functions in files and learn how to import them in the listener. Factor organizes words into nested namespaces called **vocabularies**. You can import all names from a vocabulary with the word `USE:`. In fact, you may have seen something like
+
+USE: math.ranges
+
+when you asked the listener to import the word `[1,b]` for you. You can also use more than one vocabulary at a time with the word `USING:`, which is followed by a list of vocabularies and terminated by `;`, like
+
+USING: math.ranges sequences.deep ;
+
+Finally, you define the vocabulary where your definitions are stored with the word `IN:`. If you search the online help for a word you have defined so far, like `prime?`, you will see that your definitions have been grouped under the default `scratchpad` vocabulary. By the way, this shows that the online help automatically collects information about your own words, which is a very useful feature.
+
+On disk, vocabularies are stored under a few root directories, much like with the classpath in JVM languages. By default, the system starts looking up into the directories `basis`, `core`, `extra`, `work` under the Factor home. You can add more, both at runtime with the word `add-vocab-root`, and by creating a configuration file `.factor-rc`, but for now we will store our vocabularies under the `work` directory, which is reserved for the user.
+
+Generate a template for a vocabulary writing
+
+    USE: tools.scaffold
+    "github.tutorial" scaffold-work
+
+You will find a file `work/github/tutorial/tutorial.factor` containing an empty vocabulary. You can add the definitions of the previous paragraph, so that it looks like
+
+    ! Copyright (C) 2014 Andrea Ferretti.
+    ! See http://factorcode.org/license.txt for BSD license.
+    USING: ;
+    IN: github.tutorial
+
+    : [2,b] ( n -- {2,...,n} ) 2 swap [a,b] ; inline
+
+    : multiple? ( a b -- ? ) swap divisor? ; inline
+
+    : exists? ( seq pred: ( elt -- ? ) -- ? ) find nip >boolean ; inline
+
+    : prime? ( n -- ? ) [ sqrt [2,b] ] [ [ multiple? ] curry ] bi exists? not ;
+
+Since the vocabulary was already loaded when you scaffolded it, we need a way to refresh it from disk. You can do this with `"github.tutorial" refresh`. You will be prompted a few times to use vocabularies, since your `USING:` statement is empty. After having accepted all of them, Factor suggests you a new header with all the needed imports:
+
+    USING: kernel math.functions math.ranges sequences ;
+    IN: github.tutorial
+
+You now want to come back and edit the file to add this header. Of course, you still have the file open your editor, but if this was not the case, you could make use of Factor editor integration.
+
+For instance, I am using Sublime Text right now, so I load the integration with
+
+    USE: editors.sublime
+
+After having done that, I can edit, say, the `multiple?` word with `\ multiple? edit`. I find Sublime Text open on the relevant line of the right file. Locate your favorite editor with the online help and do the same. This also works for words in the Factor distribution, although it may be a bad idea to modify them.
+
+This `\` word requires a little explanation. It works like a sort of escape, allowing us to put a reference to the next word on the stack, without executing it. This is exactly what we need, because `edit` is a word that takes words themselves as arguments. This mechanism is similar to quotations, but while a quotation creates a new anonymous function, here we are directly refering to the word `multiple?`.
+
+Back to our task, you may notice that the words `[2,b]`, `multiple?` and `exists?` are just helper functions that you may not want to expose directly. To hide them from view, you can wrap them in a private block like this
+
+    <PRIVATE
+
+    : [2,b] ( n -- {2,...,n} ) 2 swap [a,b] ; inline
+
+    : multiple? ( a b -- ? ) swap divisor? ; inline
+
+    : exists? ( seq pred: ( elt -- ? ) -- ? ) find nip >boolean ; inline
+
+    PRIVATE>
+
+After making this change and refreshed the vocabulary, you will see that the listener is not able to refer to words like `[2,b]` anymore. The `<PRIVATE` word works by putting all definitions in the private block under a different vocabulary, in our case `github.tutorial.private`.
+
+It is still possible to refer to words in private vocabularies, as you can confirm by searching for `[2,b]` in the online help, but of course this is discouraged, since people do not guarantee any API stability for private words. Words under `github.tutorial` can refer to words in `github.tutorial.private` directly, like `prime?` does.
+
 The object system and protocols
 -------------------------------
 
