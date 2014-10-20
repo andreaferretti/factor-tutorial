@@ -266,11 +266,13 @@ Tests are written using the `unit-test` word, which expects two quotations: the 
     [ t ] [ 13 prime? ] unit-test
     [ t ] [ 29 prime? ] unit-test
     [ f ] [ 15 prime? ] unit-test
-    [ f ] [ 13 29 * prime? ] unit-test
+    [ f ] [ 377 prime? ] unit-test
     [ f ] [ 1 prime? ] unit-test
     [ t ] [ 20750750228539 prime? ] unit-test
 
-You can now run the tests with `github.tutorial` test.
+You can now run the tests with `github.tutorial` test. You will see that we have actually made a mistake, and pressing `F3` will show more details. It seems that our assertions fails for `2`.
+
+In fact, if you manually try to run our functions for `2`, you will see that our defition of `[2,b]` returns `{ 2 }` for `2 sqrt`, due to the fact that the square root of two is less than two, so we get a descending interval. Try making a fix so that the tests now pass.
 
 There are a few more words to test errors and inference of stack effects. `unit-test` suffices for now, but later on you may want to check `must-fail` and `must-infer`.
 
