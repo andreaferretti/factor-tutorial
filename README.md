@@ -3,22 +3,22 @@ A long Factor tutorial
 
 Factor is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concepts like folding, higher-order functions or currying.
 
-Even if Factor is a rather niche language, it is mature and feature a comprehensive standard library covering tasks from JSON serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dinamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O, much like node, but with a much simpler model for cooperative multithreading.
+Even if Factor is a rather niche language, it is mature and features a comprehensive standard library covering tasks from JSON serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dinamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O - much like node, but with a much simpler model for cooperative multithreading.
 
-In this tutorial, we assume that you have downloaded a copy of Factor and that you are following along with the examples in the Listener. The first paragraph gives some motivation for the use of the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.
+In this tutorial, we assume that you have downloaded a copy of Factor and that you are following along with the examples in the listener. The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.
 
 Concatenative languages
 -----------------------
 
-Factor is a *concatenative* programming language in the spirit of Forth. What does this even mean? In a *concatenative* language, there is essentially only one operation, which is function composition. Since function composition is so pervasive, it is usually implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (usually, functions are read from left to right, so this means first execute `f`, then `g`, unlike in mathematical notation).
+Factor is a *concatenative* programming language in the spirit of Forth. What does this even mean? In a concatenative language, there is essentially only one operation, which is function composition. Since function composition is so pervasive, it is usually implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (usually, functions are read from left to right, so this means first execute `f`, then `g`, unlike in mathematical notation).
 
-This requires some explanation, since functions will usually have multiple inputs and outputs, and it is not always the case that the output of `f` matches the input of `g`. For this to work, `f` and `g` have essentially to be functions which take and return the whole state of the world.
+This requires some explanation, since functions will usually have multiple inputs and outputs, and it is not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. For this to work, `f` and `g` have essentially to be functions which take and return the whole state of the world.
 
 There are various ways this global state can be encoded. The most naive would use a hashmap mapping variable names to their values. This turns out to be too flexible: if every function can access randomly any piece of global state, there is little control on what functions can do, little encapsulation and ultimately programs become an unstructured mess of routines mutating global variables.
 
-It turns out in practice that a nice way is to encode the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (for instance `swap`, that swap the two elements on top), then it becomes possible to refer to values more down the stack, but the farthest the position, the hardest it becomes to refer to it.
+It works well in practice to represent the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (for instance `swap`, that exchanges the two elements on top), then it becomes possible to refer to values more down the stack, but the farthest the position, the hardest it becomes to refer to it.
 
-So functions are encouraged to stay small and only refer to the top two or three elements. In a sense, there is no more a distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.
+So, functions are encouraged to stay small and only refer to the top two or three elements. In a sense, there is no more a distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.
 
 Notice that if every function takes the state of the whole world and returns the next state, its input is never used anymore. So, even if it is more convenient to think of pure functions from stacks to stacks, the semantics of the language can be implemented more efficiently by mutating a fixed stack.
 
@@ -27,7 +27,7 @@ This leaves Factor in a strange position, whereby it is both extremely functiona
 Playing with the stack
 ----------------------
 
-Let us start looking what Factor actually feels like. Our first words will be literals, like `3`, `12.58` or `"chuck norris"`. Literals can be thought as functions that push themselves on the stack. Try writing `5` in the listener and then press enter to confirm. You will see that the stack, initially empty, now looks like
+Let us start looking what Factor actually feels like. Our first words will be literals, like `3`, `12.58` or `"Chuck Norris"`. Literals can be thought as functions that push themselves on the stack. Try writing `5` in the listener and then press enter to confirm. You will see that the stack, initially empty, now looks like
 
     5
 
@@ -61,9 +61,9 @@ Defining our first word
 
 We will now define our first function. Factor has a slightly odd naming: since functions are just written from left to right, they are simply called **words**, and this is what we will do from now on. Modules in Factor define words in terms of previous words and are then called **vocabularies**.
 
-We will want to compute the factorial. To start with a concrete example, we compute the factorial of `10`, so we start by writing `10` on the stack. Now, the factorial is the product of the numbers from `1` to `10`, so we should produce such a list of numbers first. Tokenization is trivial in Factor, as words are always space separated, and this allows you to use any combination of non-whitespace characters as an identifier.
+We will want to compute the factorial. To start with a concrete example, we compute the factorial of `10`, so we start by writing `10` on the stack. Now, the factorial is the product of the numbers from `1` to `10`, so we should produce such a list of numbers first.
 
-The function to produce a range is reasonably called `[a,b]`. In our case one of the extremes is just `1`, so we can use the simpler word `[1,b]` instead. If you write that in the listener, you will be prompted with a choice, because the name `[1,b]` is not imported by default. Factor is able to suggest to import the `math.ranges` vocabulary, so choose that option and proceed.
+The function to produce a range is reasonably called `[a,b]` (tokenization is trivial in Factor, as words are always space separated, and this allows you to use any combination of non-whitespace characters as an identifier). In our case one of the extremes is just `1`, so we can use the simpler word `[1,b]` instead. If you write that in the listener, you will be prompted with a choice, because the name `[1,b]` is not imported by default. Factor is able to suggest to import the `math.ranges` vocabulary, so choose that option and proceed.
 
 You should now have on your stack a rather opaque structure which looks like
 
@@ -81,7 +81,7 @@ Try writing `1 [ * ] reduce` and look at the output: it is indeed the factorial 
 
 If we had written just `*`, Factor would have tried to apply multiplication to the topmost two elements, which is not what we wanted. What we need is a way to mention a word without applying it. Keeping our textual metaphor, this mechanism is called **quotation**. To quote one or more words, you just surround them by `[` and `]` (leaving spaces). What you get is akin to an anonymous function in other languages.
 
-Let us `drop` the result to empty the stack, and try writing what we have done so far in a single shot `10 [1,b] 1 [ * ] reduce`. This will output `3628800` as expected.
+Let us `drop` the result to empty the stack, and try writing what we have done so far in a single shot: `10 [1,b] 1 [ * ] reduce`. This will output `3628800` as expected.
 
 We now want to define a word that can be called whenever we want. We will call our word `!` as it is customary. To define it, we need to use the word `:`. Then we put the name of the word being defined, the **stack effects** and finally the body, ending with the `;` word:
 
@@ -146,7 +146,7 @@ Although the words mentioned in the previous paragraph are occasionally useful (
 
 Nevertheless, there are certain patterns of use that are better abstracted away into their own words. For instance, say we want to define a word to determine whether a given number `n` is prime. A simple algorithm would be to test each number from `2` to the square root of `n` and see whether it is a divisor of `n`.
 
-This immediately shows that `n` is used in two places: as an upper bound for the sequence, and as the number to test for division. The word `bi` applies two different quotations to an element on the stack, and this is precisely what we need. For instance `5 [ 2 * ] [ 3 + ] bi` yields
+This immediately shows that `n` is used in two places: as an upper bound for the sequence, and as the number to test for divisibility. The word `bi` applies two different quotations to an element on the stack, and this is precisely what we need. For instance `5 [ 2 * ] [ 3 + ] bi` yields
 
     10
     8
@@ -173,7 +173,7 @@ Notice the use of nested stack effects. Our full definition looks like
 
     : prime? ( n -- ? ) [ sqrt [2,b] ] [ [ multiple? ] curry ] bi exists? not ;
 
-Altough the definition is slightly complicated, the stack shuffling is minimal and limited to the small helper functions, which are much simpler to reasong about than `prime?`.
+Altough the definition is slightly complicated, the stack shuffling is minimal and limited to the small helper functions, which are much simpler to reason about than `prime?`.
 
 Notice that our `prime?` word uses two levels of quotation nesting. In general, Factor words tend to be rather shallow, using one level of nesting for each higher-order function, unlike Lisps or more generally languages based on the lambda calculus, which use one level of nesting for each function, higher-order or not.
 
@@ -184,13 +184,15 @@ Vocabularies
 
 It is now time to start writing your functions in files and learn how to import them in the listener. Factor organizes words into nested namespaces called **vocabularies**. You can import all names from a vocabulary with the word `USE:`. In fact, you may have seen something like
 
-USE: math.ranges
+    USE: math.ranges
 
 when you asked the listener to import the word `[1,b]` for you. You can also use more than one vocabulary at a time with the word `USING:`, which is followed by a list of vocabularies and terminated by `;`, like
 
-USING: math.ranges sequences.deep ;
+    USING: math.ranges sequences.deep ;
 
 Finally, you define the vocabulary where your definitions are stored with the word `IN:`. If you search the online help for a word you have defined so far, like `prime?`, you will see that your definitions have been grouped under the default `scratchpad` vocabulary. By the way, this shows that the online help automatically collects information about your own words, which is a very useful feature.
+
+There are a few more words, like `QUALIFIED:`, `FROM:`, `EXCLUDE:` and `RENAME:`, that allow more fine-grained control over the imports, but `USING:` is the most common.
 
 On disk, vocabularies are stored under a few root directories, much like with the classpath in JVM languages. By default, the system starts looking up into the directories `basis`, `core`, `extra`, `work` under the Factor home. You can add more, both at runtime with the word `add-vocab-root`, and by creating a configuration file `.factor-rc`, but for now we will store our vocabularies under the `work` directory, which is reserved for the user.
 
@@ -247,6 +249,34 @@ It is still possible to refer to words in private vocabularies, as you can confi
 
 Tests and documentation
 -----------------------
+
+This is a good time to start writing some unit tests. You can create a skeleton with
+
+    "github.tutorial" scaffold-tests
+
+You fill find a generated file under `work/github/tutorial/tutorial-tests.factor`. Notice the line
+
+    USING: tools.test github.tutorial ;
+
+that imports the unit testing module as well as your own. We will only test the public `prime?` function.
+
+Tests are written using the `unit-test` word, which expects two quotations: the first one containing the expected outputs and the second one containing the words to run in order to get that output. Add these lines to `github.tutorial-tests`:
+
+    [ t ] [ 2 prime? ] unit-test
+    [ t ] [ 13 prime? ] unit-test
+    [ t ] [ 29 prime? ] unit-test
+    [ f ] [ 15 prime? ] unit-test
+    [ f ] [ 13 29 * prime? ] unit-test
+    [ f ] [ 1 prime? ] unit-test
+    [ t ] [ 20750750228539 prime? ] unit-test
+
+You can now run the tests with `github.tutorial` test.
+
+There are a few more words to test errors and inference of stack effects. `unit-test` suffices for now, but later on you may want to check `must-fail` and `must-infer`.
+
+We can also add some documentation to our vocabulary. Autogenerated documentation is always available for user-defined words (even in the listener), but we can write some useful comments manually, or even add custom articles that will appear in the online help. Predictably, we start with
+
+    "github.tutorial" scaffold-docs
 
 The object system and protocols
 -------------------------------
