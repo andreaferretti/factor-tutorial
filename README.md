@@ -296,9 +296,7 @@ Notice that the type of the output `?` has been inferred to be boolean. Change t
         { "n" fixnum }
         { "?" boolean }
     }
-    { $description
-        "Tests if n is prime. n is assumed to be a positive integer."
-    } ;
+    { $description "Tests if n is prime. n is assumed to be a positive integer." } ;
 
 and refresh the `github.tutorial` vocabulary. If you now look at the help for `prime?`, for instance with `\ prime? help`, you will see the updated documentation.
 
@@ -313,6 +311,42 @@ The help markup contains a lot of possible directives, and you can use them to w
 
 The object system and protocols
 -------------------------------
+
+Although it is not apparent from what we have said so far, Factor has object-oriented features, and many core words are actually method invocations. To better understand how objects behave in Factor, a quote is in order:
+
+> I invented the term Object-Oriented and I can tell you I did not have C++ in mind.
+
+> Alan Kay
+
+The term object-oriented has as many different meanings as people using it. One point of view - which was actually central to the work of Alan Kay - is that it is about late binding of function names. In Smalltalk, the language where this concept was born, people do not talk about calling a method, but rather sending a message to an object. It is up to the object to decide how to respond to this message, and the caller should not know about the implementation. For instance, one can send the message `map` both to an array and a linked list, but internally the iteration will be handled differently.
+
+The binding of the message name to the method implementation is dynamic, and this is regarded as the core strenght of objects. As a result, fairly complex systems can evolve from the cooperation of independent objects who do not mess with each other internals.
+
+To be fair, Factor is very different from Smalltalk, but still there is the concept of classes, and generic words can defined having different implementations on different classes.
+
+Some classes are builtin in Factor, such as `string`, `boolean`, `fixnum` or `word`. Next, the most common way to define a class is as a tuple. Tuples are defined with the `TUPLE:` parsing word, followed by the tuple name and the fields of the class that we want to define, which are called 'slots' in Factor parlance.
+
+Let us define a class for movies:
+
+    TUPLE: movie title director actors ;
+
+This also generates setters `>>title`, `>>director` and `>>actors` and getters `title>>`, `director>>` and `actors>>`. For instance, we can create a new movie with
+
+    movie new "The prestige" >>title
+      "Christopher Nolan" >>director
+      { "Hugh Jackman" "Christian Bale" "Scarlett Johansson" } >>actors
+
+We can also shorten this to
+
+    "The prestige" "Christopher Nolan"
+    { "Hugh Jackman" "Christian Bale" "Scarlett Johansson" }
+    movie boa
+
+The word `boa` stands for 'by-order-of-arguments' and is a constructor that fills the slots of the tuple with the items on the stack in order. `movie boa` is called a 'boa constructor', a word play on the Boa Constrictor. It is customary to define a most common constructor called `<movie>`, which in our case could be simply
+
+    : <movie> ( title director actors -- movie ) movie boa ;
+
+In other cases, you may want to use some defaults, or compute some fields.
 
 The listener
 ------------
