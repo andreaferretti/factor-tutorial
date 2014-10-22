@@ -340,8 +340,42 @@ The word `boa` stands for 'by-order-of-arguments' and is a constructor that fill
 
 In other cases, you may want to use some defaults, or compute some fields.
 
+We also define another tuple class for rock bands
+
+    TUPLE: band keyboards guitar bass drums ;
+    : <band> ( keyboards guitar bass drums -- band ) band boa ;
+
+together with one instance
+
+	"Richard Wright" "David Gilmour" "Roger Waters" "Nick Mason" <band>
+
+Now, of course everyone knows that the star in a movie is the first actor, while in a rock band it is the bass player. To encode this, we first define a generic word
+
+    GENERIC: star ( item -- star )
+
+As you can see, it is declared with the parsing word `GENERIC:` and declares its stack effects but it has no implementation right now, hence no need for the closing `;`. Generic words are used to perform dynamic dispatch. We can define implementations for various classes using the word `M:`
+
+    M: movie star actors>> first ;
+    M: band star bass>> ;
+
+If you write `star .` two times, you can see the different effect of calling a generic word on instances of different classes.
+
+Builtin and tuple classes are not all that there is to the object system: more classes can be defined with set operations like `UNION:` and `INTERSECTION:`. Another way to define a class is as a mixin.
+
+Mixins are defined with the `MIXIN:` word, and existing classes can be added to the mixin writing
+
+    INSTANCE: class mixin
+
+Methods defined on the mixin will then be available on all classes that belong to the mixin. If you are familiar with Haskell typeclasses, you will recognize a resemblance, although Haskell enforces at compile time that instance of typeclasses implent certain functions, while in Factor this is informally specified in documentation.
+
+Two important examples of mixins are `sequence` and `assoc`. The former defines a protocol that is available to all concrete sequences, such as strings, linked lists or arrays, while the latter defines a protocol for associative arrays, such as hashtables or association lists.
+
+This enables all sequences in Factor to be acted upon with a common set of words, while differing in implementation and minimizing code repetition (because only few primitives are needed, and other operations are defined for the `sequence` class). The most common operations you will use on sequences are `map`, `filter` and `reduce`, but there are many more - as you can see with `"sequences" help`.
+
 The listener
 ------------
+
+help, errors, refresh, lint, timing, watch words
 
 Metaprogramming
 ---------------
