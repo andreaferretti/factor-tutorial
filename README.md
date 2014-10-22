@@ -165,13 +165,9 @@ Now, producing the range of numbers from `2` to the square root of `n` is easy: 
 
 We must produce a function that test for being a divisor of `n` - in other words we need to partially apply the word `multiple?`. This can be done with the word `curry`, like this: `[ multiple? ] curry`.
 
-Finally, once we have the range and the test function on the stack, we can test whether any element satisfies the divisibility with `find` and convert it to a boolean (`t` or `f`) with `>boolean`. Since `find` returns both the index and the element, we will want to define another word
+Finally, once we have the range and the test function on the stack, we can test whether any element satisfies the divisibility with `any?`. Our full definition looks like
 
-    : exists? ( seq pred: ( elt -- ? ) -- ? ) find nip >boolean ; inline
-
-Notice the use of nested stack effects. Our full definition looks like
-
-    : prime? ( n -- ? ) [ sqrt [2,b] ] [ [ multiple? ] curry ] bi exists? not ;
+    : prime? ( n -- ? ) [ sqrt [2,b] ] [ [ multiple? ] curry ] bi any? not ;
 
 Altough the definition is slightly complicated, the stack shuffling is minimal and limited to the small helper functions, which are much simpler to reason about than `prime?`.
 
@@ -212,9 +208,7 @@ You will find a file `work/github/tutorial/tutorial.factor` containing an empty 
 
     : multiple? ( a b -- ? ) swap divisor? ; inline
 
-    : exists? ( seq pred: ( elt -- ? ) -- ? ) find nip >boolean ; inline
-
-    : prime? ( n -- ? ) [ sqrt [2,b] ] [ [ multiple? ] curry ] bi exists? not ;
+    : prime? ( n -- ? ) [ sqrt [2,b] ] [ [ multiple? ] curry ] bi any? not ;
 
 Since the vocabulary was already loaded when you scaffolded it, we need a way to refresh it from disk. You can do this with `"github.tutorial" refresh`. There is also a `refresh-all` word, with a shortcut `F2`.
 
@@ -233,15 +227,13 @@ After having done that, I can edit, say, the `multiple?` word with `\ multiple? 
 
 This `\` word requires a little explanation. It works like a sort of escape, allowing us to put a reference to the next word on the stack, without executing it. This is exactly what we need, because `edit` is a word that takes words themselves as arguments. This mechanism is similar to quotations, but while a quotation creates a new anonymous function, here we are directly refering to the word `multiple?`.
 
-Back to our task, you may notice that the words `[2,b]`, `multiple?` and `exists?` are just helper functions that you may not want to expose directly. To hide them from view, you can wrap them in a private block like this
+Back to our task, you may notice that the words `[2,b]` and `multiple?` are just helper functions that you may not want to expose directly. To hide them from view, you can wrap them in a private block like this
 
     <PRIVATE
 
     : [2,b] ( n -- {2,...,n} ) 2 swap [a,b] ; inline
 
     : multiple? ( a b -- ? ) swap divisor? ; inline
-
-    : exists? ( seq pred: ( elt -- ? ) -- ? ) find nip >boolean ; inline
 
     PRIVATE>
 
