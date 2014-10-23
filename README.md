@@ -340,9 +340,12 @@ The word `boa` stands for 'by-order-of-arguments' and is a constructor that fill
 
 In other cases, you may want to use some defaults, or compute some fields.
 
-We also define another tuple class for rock bands
+The functional minded will be worried about the mutability of tuples. Actually, slots can be declared to be read-only with `{ slot-name read-only }`. In this case, the field setter will not be generated, and the value must be set a the beginning with a boa constructor. Other valid slot modifiers are `initial:` - to declare a default value - and a class word, such as `integer`, to restrict the values that can be inserted.
 
-    TUPLE: band keyboards guitar bass drums ;
+As an example, we define another tuple class for rock bands
+
+    TUPLE: band { keyboards string read-only } { guitar string read-only }
+      { bass string read-only } { drums string read-only } ;
     : <band> ( keyboards guitar bass drums -- band ) band boa ;
 
 together with one instance
@@ -372,10 +375,67 @@ Two important examples of mixins are `sequence` and `assoc`. The former defines 
 
 This enables all sequences in Factor to be acted upon with a common set of words, while differing in implementation and minimizing code repetition (because only few primitives are needed, and other operations are defined for the `sequence` class). The most common operations you will use on sequences are `map`, `filter` and `reduce`, but there are many more - as you can see with `"sequences" help`.
 
-The listener
-------------
+Learning the tools
+------------------
 
-help, errors, refresh, lint, timing, watch words
+A big part of the productivity of Factor comes from the deep integration of the language and libraries with the tools around them, which are embodied in the listener. Many functions of the listener can be used programmatically, and viceversa. You have seen some examples of this:
+
+* the help is navigable online, but you can also invoke it with `help` and print help items with `print-content`;
+* the `F2` shortcut or the words `refresh` and `refresh-all` can be used to refresh vocabularies from disk while continuing working in the listener;
+* the `edit` word gives you editor integration, but you can also click on file names in the help pages for vocabularies to open them.
+
+The refresh is actually quite smart. Whenever a word is redefined, words that depend on it are recompiled against the new defition. You can check by yourself doing
+
+    : inc ( x -- y ) 1 + ;
+    : inc-print ( x -- ) inc . ;
+    5 inc-print
+
+and then
+
+    : inc ( x -- y ) 2 + ;
+    5 inc-print
+
+This allows you to always keep a listener open, improving your definitions, periodically saving your definitions to file and refreshing, without ever having to reload Factor.
+
+You can also save the whole state of Factor with the word `save-image` and later restore it by starting Factor with
+
+    ./factor -i=path-to-image
+
+In fact, Factor is image-based and only uses files when loading and refreshing vocabularies.
+
+The power of the listener does not end here. Elements of the stack can be inspected by clicking on them, or by calling the word `inspector`. For instance try writing
+
+    TUPLE: trilogy first second third ;
+    : <trilogy> ( first second third -- trilogy ) trilogy boa ;
+    "A new hope" "The Empire strikes back" "Return of the Jedi" <trilogy>
+    "George Lucas" 2array
+
+You will get an item that looks like
+
+    { ~trilogy~ "George Lucas" }
+
+on the stack. Try clicking on it: you will be able to see the slots of the array and focus on the trilogy or on the string by double-clicking on them. This is extremely useful for interactive prototyping. Special objects can customize the inspector by implementing the `content-gadget` method.
+
+There is another inspector for errors. Whenever an error arises, it can be inspected with `F3`. This allows you to investigate exceptions, bad stack effects declarations and so on. The debugger allows you to step into code, both forwards and backwards, and you should take a moment to get some familiarity with it.
+
+Another feature of the listener allows you to benchmark code. As an example, we write an intentionally inefficient Fibonacci:
+
+    DEFER: fib-rec
+    : fib ( n -- f(n) ) dup 2 < [ ] [ fib-rec ] if ;
+    : fib-rec ( n -- f(n) ) [ 1 - fib ] [ 2 - fib ] bi + ;
+
+(notice the use of `DEFER:` to define two mutually recursive words). You can benchmark the running time writing `40 fib` and then pressing Ctrl+T instead of Enter. You will get timing information, as well as other statistics. Programmatically, you can use the `time` word on a quotation to do the same.
+
+You can also add watches on words, to print inputs and outputs on entry and exit. Try writing
+
+    \ fib watch
+
+and then run `10 fib` to see what happens. You can then remove the watch with `\ fib reset`.
+
+Another very useful tool is the `lint` vocabulary. This scans word definitions to find duplicated code that can be factored out. As an example, let us define
+
+
+images
 
 Metaprogramming
 ---------------
@@ -392,6 +452,8 @@ Input/Output
 
 Deploying programs
 ------------------
+
+factor scripts, deploy tool
 
 Multithreading
 --------------
