@@ -5,7 +5,15 @@ Factor is a mature, dynamically typed language based on the concatenative paradi
 
 Even if Factor is a rather niche language, it is mature and features a comprehensive standard library covering tasks from JSON serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dinamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O - much like node, but with a much simpler model for cooperative multithreading.
 
-In this tutorial, we assume that you have downloaded a copy of Factor and that you are following along with the examples in the listener. The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.
+You may wonder why should you care enough to read this long tutorial. Factor has a few significant advantages over other languages, most arising from the fact that it has essentially no syntax:
+
+* refactoring is very easy, leading to short and meaningful definitions;
+* it is extremely succint, letting the programmer concentrate on what has to be done instead of boilerplate;
+* it has powerful metaprogramming capabilities, exceeding those of LISPs;
+* it is ideal to embed DSLs;
+* it integrates easily with powerful tools.
+
+In this tutorial, we assume that you have downloaded a copy of Factor and that you are following along with the examples in the listener (the Factor REPL). The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.
 
 Concatenative languages
 -----------------------
@@ -416,7 +424,7 @@ You will get an item that looks like
 
 on the stack. Try clicking on it: you will be able to see the slots of the array and focus on the trilogy or on the string by double-clicking on them. This is extremely useful for interactive prototyping. Special objects can customize the inspector by implementing the `content-gadget` method.
 
-There is another inspector for errors. Whenever an error arises, it can be inspected with `F3`. This allows you to investigate exceptions, bad stack effects declarations and so on. The debugger allows you to step into code, both forwards and backwards, and you should take a moment to get some familiarity with it.
+There is another inspector for errors. Whenever an error arises, it can be inspected with `F3`. This allows you to investigate exceptions, bad stack effects declarations and so on. The debugger allows you to step into code, both forwards and backwards, and you should take a moment to get some familiarity with it. You can also trigger the debugger manually, by entering some code in the listener and pressing `Ctrl+w`.
 
 Another feature of the listener allows you to benchmark code. As an example, we write an intentionally inefficient Fibonacci:
 
@@ -424,7 +432,7 @@ Another feature of the listener allows you to benchmark code. As an example, we 
     : fib ( n -- f(n) ) dup 2 < [ ] [ fib-rec ] if ;
     : fib-rec ( n -- f(n) ) [ 1 - fib ] [ 2 - fib ] bi + ;
 
-(notice the use of `DEFER:` to define two mutually recursive words). You can benchmark the running time writing `40 fib` and then pressing Ctrl+T instead of Enter. You will get timing information, as well as other statistics. Programmatically, you can use the `time` word on a quotation to do the same.
+(notice the use of `DEFER:` to define two mutually recursive words). You can benchmark the running time writing `40 fib` and then pressing Ctrl+t instead of Enter. You will get timing information, as well as other statistics. Programmatically, you can use the `time` word on a quotation to do the same.
 
 You can also add watches on words, to print inputs and outputs on entry and exit. Try writing
 
@@ -432,10 +440,22 @@ You can also add watches on words, to print inputs and outputs on entry and exit
 
 and then run `10 fib` to see what happens. You can then remove the watch with `\ fib reset`.
 
-Another very useful tool is the `lint` vocabulary. This scans word definitions to find duplicated code that can be factored out. As an example, let us define
+Another very useful tool is the `lint` vocabulary. This scans word definitions to find duplicated code that can be factored out. As an example, let us define a word to check if a string starts with another one. Create a test vocabulary
 
+    "lintme" scaffold-work
 
-images
+and add the following definition
+
+    USING: kernel sequences ;
+    IN: lintme
+
+    : startswith? ( str sub -- ? ) dup length swapd head = ;
+
+Load the lint tool with `USE: lint` and write `"lintme" lint-vocab`. You will get a report mentioning that the word sequence `length swapd` is already used in the word `(split)` of `splitting.private`, hence it could be factored out.
+
+Now, you would not certainly want to modify the source of a word in the standard library - let alone a private one - but in more complex cases the lint tool is able to find actual repetitions. It is a good idea to lint your vocabularies from time to time, to avoid code duplication and as a good way to discover library words that you may have accidentally redefined.
+
+Finally, there are a few utilities to inspect words. You can see the definition of a word in the help tool, but a quicker way can be `see`. Or, viceversa, you may use `usage.` to inspect the callers of a given word. Try `\ reverse see` and `\ reverse usage.`.
 
 Metaprogramming
 ---------------
@@ -463,3 +483,8 @@ Servers and Furnace
 
 Processes and channels
 ----------------------
+
+Where to go from here?
+----------------------
+
+tips, drawbacks, other vocabs: exceptions, models, pattern matching, monads...
