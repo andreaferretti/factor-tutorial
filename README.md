@@ -324,7 +324,7 @@ The binding of the message name to the method implementation is dynamic, and thi
 
 To be fair, Factor is very different from Smalltalk, but still there is the concept of classes, and generic words can defined having different implementations on different classes.
 
-Some classes are builtin in Factor, such as `string`, `boolean`, `fixnum` or `word`. Next, the most common way to define a class is as a tuple. Tuples are defined with the `TUPLE:` parsing word, followed by the tuple name and the fields of the class that we want to define, which are called 'slots' in Factor parlance.
+Some classes are builtin in Factor, such as `string`, `boolean`, `fixnum` or `word`. Next, the most common way to define a class is as a **tuple**. Tuples are defined with the `TUPLE:` parsing word, followed by the tuple name and the fields of the class that we want to define, which are called **slots** in Factor parlance.
 
 Let us define a class for movies:
 
@@ -342,7 +342,7 @@ We can also shorten this to
     { "Hugh Jackman" "Christian Bale" "Scarlett Johansson" }
     movie boa
 
-The word `boa` stands for 'by-order-of-arguments' and is a constructor that fills the slots of the tuple with the items on the stack in order. `movie boa` is called a 'boa constructor', a word play on the Boa Constrictor. It is customary to define a most common constructor called `<movie>`, which in our case could be simply
+The word `boa` stands for 'by-order-of-arguments' and is a constructor that fills the slots of the tuple with the items on the stack in order. `movie boa` is called a **boa constructor**, a pun on the Boa Constrictor. It is customary to define a most common constructor called `<movie>`, which in our case could be simply
 
     : <movie> ( title director actors -- movie ) movie boa ;
 
@@ -360,7 +360,7 @@ together with one instance
 
 	"Richard Wright" "David Gilmour" "Roger Waters" "Nick Mason" <band>
 
-Now, of course everyone knows that the star in a movie is the first actor, while in a rock band it is the bass player. To encode this, we first define a generic word
+Now, of course everyone knows that the star in a movie is the first actor, while in a rock band it is the bass player. To encode this, we first define a **generic word**
 
     GENERIC: star ( item -- star )
 
@@ -371,7 +371,7 @@ As you can see, it is declared with the parsing word `GENERIC:` and declares its
 
 If you write `star .` two times, you can see the different effect of calling a generic word on instances of different classes.
 
-Builtin and tuple classes are not all that there is to the object system: more classes can be defined with set operations like `UNION:` and `INTERSECTION:`. Another way to define a class is as a mixin.
+Builtin and tuple classes are not all that there is to the object system: more classes can be defined with set operations like `UNION:` and `INTERSECTION:`. Another way to define a class is as a **mixin**.
 
 Mixins are defined with the `MIXIN:` word, and existing classes can be added to the mixin writing
 
@@ -503,7 +503,29 @@ In a sense, Factor syntax is completely flat, and parsing words allow you to int
 When the stack is not enough
 ----------------------------
 
-locals, fried quotations, global variables
+Until now I have cheated a bit, and tried to avoid writing examples that would have been too complex to write in concatenative style. Truth is, you *will* find occasions where this is too restrictive. Fortunately, parsing words allow you to break these restrictions, and Factor comes with a few to handle the most common annoyances.
+
+One thing you may want to do is to actually name local variables. The `::` word works like `:`, but allows you to actually bind the name of stack parameters to variables, so that you can use them multiple times, in the order you want. For instance, let us define a word to solve quadratic equations. I will spare you the purely stack-based version, and present you a version with locals (this will require the `locals` vocabulary):
+
+    :: solveq ( a b c -- x )
+      b neg
+      b b * 4 a c * * - sqrt
+      +
+      2 a * / ;
+
+In this case we have chosen the + sign, but we can do better and output both solutions:
+
+    :: solveq ( a b c -- x1 x2 )
+      b neg
+      b b * 4 a c * * - sqrt
+      [ + ] [ - ] 2bi
+      [ 2 a * / ] bi@ ;
+
+You can check that this definition works with something like `2 -16 30 solveq`, which should output both `3.0` and `5.0`. Apart from being written in RPN style, our first version of `solveq` looks exactly the same it would in a language with local variables. For the second definition, we apply both the `+` and `-` operations to -b and delta, using the combinator `2bi`, and then divide both results by 2a using `bi@`.
+
+There is also support for locals in quotations - using `[|` - and methods - using `M::`, and one can also create a scope where to bind local variables outside definitions using `[let`. Of course, all of these are actually compiled to concatenative code with some stack shuffling. I encourage you to browse examples for these words, but bear in mind that their usage in practice is actually much less prominent than one would expect - about 1% of Factor's own codebase.
+
+fried quotations, global variables
 
 Input/Output
 ------------
