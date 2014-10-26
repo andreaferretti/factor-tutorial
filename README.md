@@ -460,7 +460,45 @@ Finally, there are a few utilities to inspect words. You can see the definition 
 Metaprogramming
 ---------------
 
-macros, parsing words
+We now venture into the metaprogramming world, and write our first parsing word. By now, you have seen a lot of parsing words, such as `[`. `{`, `H{`, `USE:`, `IN:`, `<PRIVATE`, `GENERIC:` and so on. Each of those is defined with the parsing word `SYNTAX:` and interacts with Factor's parser.
+
+The parser accumulates tokens onto an accumulator vector, unless it finds a parsing word, which is executed immediately. Since parsing words execute at compile time, they cannot interact with the stack, but they have access to the accumulator vector. Their stack effect must be `( accum -- accum )`. Usually what they do is ask the parser for some more tokens, do something with them, and finally push a result on the accumulator vector with the word `suffix!`.
+
+As an example, we will define a literal for DNA sequences. A DNA sequence is a sequence of one of the bases cytosine, guanine, adenine and thymine, which we will denote by the letters c, g, a, t. Since there are four possible bases, we can encode each with two bits. Let use define a word
+
+    : dna>bits ( token -- bits ) {
+      { "a" [ { f f } ] }
+      { "c" [ { t t } ] }
+      { "g" [ { f t } ] }
+      { "t" [ { t f } ] }
+    } case ;
+
+where the first bit represents whether the basis is a purine or a pyrimidine, and the second one identifies bases that pair together.
+
+Our aim is to read a sequence of letters a, c, g, t - possibly with spaces - and convert them to a bit array. Factor supports bit arrays, and literal bit arrays look like `?{ f f t }`.
+
+Our syntax for DNA will start with `DNA{` and get all tokens until the closing token `}` is found. The intermediate tokens will be put into a string, and using our function `dna>bits` we will map this string into a bit array. To read tokens, we will use the word `parse-tokens`. There are a few higher-level words to interact with the parser, such as `parse-until` and `parse-literal`, but we cannot apply them in our case, since the tokens we will find are just sequences of a c g t, instead of valid Factor words. Let us start with a simple approximation that just reads tokens between our delimiters and outputs the string obtained by concatenation
+
+    SYNTAX: DNA{ "}" parse-tokens concat suffix!
+
+You can test the effect by doing `DNA{ a ccg t a g }`, which should output `"accgtag"`. As a second approximation, we transform each letter into a boolean pair:
+
+    SYNTAX: DNA{ "}" parse-tokens concat
+      [ 1string dna>bits ] { } map-as suffix! ;
+
+Notice the use of `map-as` instead of `map`. Since the target collection is not a string, we did not use `map`, which preserves the type, but `map-as`, which take as an additional argument an examplar of the target collection - here `{ }`.  Our final version flattens the array of pairs with `concat` and finally makes into a bit array:
+
+    SYNTAX: DNA{ "}" parse-tokens concat
+      [ 1string dna>bits ] { } map-as
+      concat >bit-array suffix! ;
+
+If you try it with `DNA{ a ccg t a g }` you should get
+
+    `?{ f f t t t t f t t f f f f t }`
+
+We only scratched the surface of parsing words by defining a simple literal. In general, they allow you to perform arbitrary computations at compile time, enabling powerful forms of metaprogramming.
+
+In a sense, Factor syntax is completely flat, and parsing words allow you to introduce syntaxes more complex than a stream of tokens to be used locally. This permits to increase the Factor language by adding many new features as libraries. In principle, it would even be possible to have an external language compile to Factor - say JavaScript - and embed it as a Factor DSL inside the boundaries of a `<JS ... JS>` parsing word. Some taste is needed not to abuse too much of this to introduce styles that are much too alien in the concatenative world.
 
 When the stack is not enough
 ----------------------------
@@ -487,4 +525,4 @@ Processes and channels
 Where to go from here?
 ----------------------
 
-tips, drawbacks, other vocabs: exceptions, models, pattern matching, monads...
+tips, drawbacks, other vocabs: exceptions, macros, models, pattern matching, monads...
