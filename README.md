@@ -523,9 +523,50 @@ In this case we have chosen the + sign, but we can do better and output both sol
 
 You can check that this definition works with something like `2 -16 30 solveq`, which should output both `3.0` and `5.0`. Apart from being written in RPN style, our first version of `solveq` looks exactly the same it would in a language with local variables. For the second definition, we apply both the `+` and `-` operations to -b and delta, using the combinator `2bi`, and then divide both results by 2a using `bi@`.
 
-There is also support for locals in quotations - using `[|` - and methods - using `M::`, and one can also create a scope where to bind local variables outside definitions using `[let`. Of course, all of these are actually compiled to concatenative code with some stack shuffling. I encourage you to browse examples for these words, but bear in mind that their usage in practice is actually much less prominent than one would expect - about 1% of Factor's own codebase.
+There is also support for locals in quotations - using `[|` - and methods - using `M::` - and one can also create a scope where to bind local variables outside definitions using `[let`. Of course, all of these are actually compiled to concatenative code with some stack shuffling. I encourage you to browse examples for these words, but bear in mind that their usage in practice is actually much less prominent than one would expect - about 1% of Factor's own codebase.
 
-fried quotations, global variables
+Another more common case happens when you need to specialize a quotation to some values, but these do not appear in the right place. Remember that you can partially apply a quotation using `curry`. But this assumes that the value you are applying should appear leftmost in the quotation; in the other cases you need some stack shuffling.
+
+The `fry` vocabulary defines **fried quotations**; these are quotations that have holes in them - marked by `_` - that are filled with values from the stack. For instance, let me take again the example with `prime?`, but this time write it without using helper words:
+
+    : prime? ( n -- ? ) [ sqrt 2 swap [a,b] ] [ [ swap divisor? ] curry ] bi any? not ;
+
+The first quotation is rewritten more simply as
+
+    [ '[ 2 _ sqrt [a,b] ] call ]
+
+Here we use a fried quotation - starting with `'[` - to inject the element on the top of the stack in the second position, and then use `call` to evaluate the resulting quotation. The second quotation becomes simply
+
+    [ '[ _ swap divisor? ] ]
+
+so an alternative defition of `prime?` is
+
+    : prime? ( n -- ? ) [ '[ 2 _ sqrt [a,b] ] call ] [ '[ _ swap divisor? ] ] bi any? not ;
+
+Depending on you taste, you may find this version more readable. In this case, the added clarity is probably lost due to the fact that the fried quotations are themselves inside quotations, but occasionally their use can do a lot to simplify the flow.
+
+Finally, there are times where one just wants to give names to variables that are available inside some scope, and use them where necessary. These values can hold values that are global, or at least not local to a single word. A typical example could be the input and output streams, or database connections.
+
+Factor allows you to create **dynamic variables** and bind them in scopes. The first thing is to create a **symbol** for a variable, say
+
+    SYMBOL: favorite-language
+
+Then one can use the word `set` to bind the variable and `get` to retrieve its values, like
+
+    "Factor" favorite-language set
+    favorite-language get
+
+Scopes are nested, and new scopes can be created with the word `with-scope`. Try for instance
+
+    : on-the-jvm ( -- ) [
+      "Scala" favorite-language set
+      favorite-language get .
+    ] with-scope ;
+
+If you run `on-the-jvm` you will get `"Scala"` printed, but still after execution `favorite-language get` return `"Factor"`.
+
+All the tools we have seen in this section should be used when necessary, as they break concatenativity and makes words less easy to factor, but greatly increase clarity when needed. Factor has a very practical approach and does not shy from offering features that are less pure but nevertheless often useful.
+
 
 Input/Output
 ------------
