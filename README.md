@@ -631,7 +631,8 @@ Start by creating our `ls` vocabulary with `"ls" scaffold-work` and make it look
 
     ! Copyright (C) 2014 Andrea Ferretti.
     ! See http://factorcode.org/license.txt for BSD license.
-    USING: accessors command-line io io.directories io.files.types kernel namespaces sequences ;
+    USING: accessors command-line io io.directories io.files.types
+      kernel namespaces sequences ;
     IN: ls
 
     <PRIVATE
@@ -660,7 +661,7 @@ Finally, we use the word `MAIN:` to declare the main word of our vocabulary:
 
 Having added those two lines to your vocabulary, you are now ready to run it. The simplest way is to run the vocabulary as a script with the `-run` flag passed to Factor. For instance to list the contents of my home I can do
 
-    factor -run=ls /home/andrea
+    ./factor -run=ls /home/andrea
 
 In order to produce an executable, we must set some options and call the `deploy` word. The simplest way to this graphically is to invoke the `deploy-tool` word. If you write `"ls" deploy-tool`, you will be presented with a window to choose deployment options. For our simple case, we will leave the default options and choose Deploy.
 
