@@ -571,6 +571,56 @@ All the tools we have seen in this section should be used when necessary, as the
 Input/Output
 ------------
 
+Factor implements efficient asynchronous input/output facilities, similar to NIO on the JVM or the Node.js I/O system. This means that input and output operations are performed in the background, leaving the foreground task free to perform work while the disk is spinning or the network is buffering packets. Factor is currently single threaded, but asynchrony allows it to be rather performant for applications that are I/O-bound.
+
+All of Factor input/output words are centered on **streams**. Streams are lazy sequences which can be read or written to, typical examples being files, network ports or the standard input and output. Factor holds a couple of dynamic variables called `input-stream` and `output-stream`, which are used by most I/O words. These variables can be rebound locally using `with-input-stream`, `with-output-stream` and `with-streams`. When you are in the listener, the default streams write and read in the listener, but once you deploy your application as an executable, they are usually bound to the standard input and output of your console.
+
+The words `<file-reader>` and `<file-writer>` (or `<file-appender>`) can be used to create a read or write stream to a file, given its path and encoding. Putting everything together, we make a simple example of a word that reads each line of a file encoded in UTF8, and write the first letter of the line to the listener.
+
+First, we want a `safe-head` word, that works like `head`, but returns its input if the sequence is too short. To do so, we will use the word `recover`, which allows us to declare a try-catch block. It requires two quotations: the first one is executed, and on failure, the second one is executed with the error as input. Hence we can define
+
+    : safe-head ( seq n -- seq' ) [ head ] [ 2drop ] recover ;
+
+With this definition, we can make a word to read the first character of the first line:
+
+    : read-first-letters ( path -- )
+      utf8 <file-reader> [
+        readln 1 safe-head write nl
+      ] with-input-stream ;
+
+Using the helper word `with-file-reader`, we can also shorten this to
+
+    : read-first-letters ( path -- )
+      utf8 [
+        readln 1 safe-head write nl
+      ] with-file-reader ;
+
+Unfortunately, we are limited to one line. To read more lines, we should chain calls to `readln` until one returns `f`. Factor helps us with the word `file-lines`, which lazily iterates over lines. Our final definition becomes
+
+    : read-first-letters ( path -- )
+      utf8 file-lines [ 1 safe-head write nl ] each ;
+
+When the file is small, one can also use `file-contents` to read the whole contents of a file in a single string. Factor defines many more words for input/output, which cover many more cases, such as binary files or sockets.
+
+We end this section investigating some words to walk the filesystem. Our aim is a very minimal implementation of the `ls` command.
+
+The word `directory-entries` lists the contents of a directory, giving a list of tuple elements, each one having the slots `name` and `type`. You can see this by trying `"/home" directory-entries [ name>> ] map`. If you inspect the directory entries, you will see that the type is either `+directory+` or `+regular-file+` (well, there are symlinks as well, but we will ignore them for simplicity). Hence we can define a word that lists files and directories with
+
+    : list-files-and-dirs ( path -- files dirs ) directory-entries [ type>> +regular-file+ = ] partition ;
+
+With this, we can define a word `ls` that will print directory contents as follows:
+
+    : ls ( path -- )
+      list-files-and-dirs
+      "DIRECTORIES:" write nl
+      "------------" write nl
+      [ name>> write nl ] each
+      "FILES:" write nl
+      "------" write nl
+      [ name>> write nl ] each ;
+
+In the next section, we shall look at how to create an executable for our simple program.
+
 Deploying programs
 ------------------
 
