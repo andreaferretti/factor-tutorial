@@ -625,7 +625,51 @@ Try the word on your home directory to see the effects. In the next section, we 
 Deploying programs
 ------------------
 
-factor scripts, deploy tool
+There are two ways to run Factor programs outside the listener: as scripts, which are interpreted by Factor, or as standalone executable compiled for your platform. Both require to define a vocabulary with an entry point (altough there is an even simpler way for scripts), so let's do that first.
+
+Start by creating our `ls` vocabulary with `"ls" scaffold-work` and make it look like this:
+
+    ! Copyright (C) 2014 Andrea Ferretti.
+    ! See http://factorcode.org/license.txt for BSD license.
+    USING: accessors command-line io io.directories io.files.types kernel namespaces sequences ;
+    IN: ls
+
+    <PRIVATE
+
+    : list-files-and-dirs ( path -- files dirs )
+        directory-entries [ type>> +regular-file+ = ] partition ;
+
+    PRIVATE>
+
+    : ls ( path -- )
+      list-files-and-dirs
+      "DIRECTORIES:" write nl
+      "------------" write nl
+      [ name>> write nl ] each
+      "FILES:" write nl
+      "------" write nl
+      [ name>> write nl ] each ;
+
+When we run our vocabulary, we will need to read arguments from the command line. Command-line arguments are stored under the `command-line` dynamic variable, which holds an array of strings. Hence - forgetting any error checking - we can define a word which runs `ls` on the first command-line argument with
+
+    : ls-run ( -- ) command-line get first ls ;
+
+Finally, we use the word `MAIN:` to declare the main word of our vocabulary:
+
+    MAIN: ls-run
+
+Having added those two lines to your vocabulary, you are now ready to run it. The simplest way is to run the vocabulary as a script with the `-run` flag passed to Factor. For instance to list the contents of my home I can do
+
+    factor -run=ls /home/andrea
+
+In order to produce an executable, we must set some options and call the `deploy` word. The simplest way to this graphically is to invoke the `deploy-tool` word. If you write `"ls" deploy-tool`, you will be presented with a window to choose deployment options. For our simple case, we will leave the default options and choose Deploy.
+
+After a little while, you should be presented with an executable that you can run like
+
+    cd ls
+    ./ls /home/andrea
+
+Try making the `ls` program more robust by handling missing command-line arguments and non-existent or non-directory arguments.
 
 Multithreading
 --------------
