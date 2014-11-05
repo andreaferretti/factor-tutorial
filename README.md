@@ -606,7 +606,8 @@ We end this section investigating some words to walk the filesystem. Our aim is 
 
 The word `directory-entries` lists the contents of a directory, giving a list of tuple elements, each one having the slots `name` and `type`. You can see this by trying `"/home" directory-entries [ name>> ] map`. If you inspect the directory entries, you will see that the type is either `+directory+` or `+regular-file+` (well, there are symlinks as well, but we will ignore them for simplicity). Hence we can define a word that lists files and directories with
 
-    : list-files-and-dirs ( path -- files dirs ) directory-entries [ type>> +regular-file+ = ] partition ;
+    : list-files-and-dirs ( path -- files dirs )
+        directory-entries [ type>> +regular-file+ = ] partition ;
 
 With this, we can define a word `ls` that will print directory contents as follows:
 
@@ -619,7 +620,7 @@ With this, we can define a word `ls` that will print directory contents as follo
       "------" write nl
       [ name>> write nl ] each ;
 
-In the next section, we shall look at how to create an executable for our simple program.
+Try the word on your home directory to see the effects. In the next section, we shall look at how to create an executable for our simple program.
 
 Deploying programs
 ------------------
