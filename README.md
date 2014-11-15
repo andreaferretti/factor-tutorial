@@ -710,7 +710,7 @@ Threads in Factors are created out of a quotation and a name, with the `spawn` w
 
 We will spawn 18 threads, each one printing a line. The operation that a thread must run amounts to
 
-    star-wars get ?nth .
+    star-wars get ?nth print
 
 Note that dynamic variables are shared between threads, so each one had access to star-wars. This is fine, since it is read-only, but the usual caveats about shared memory in a multithreaded settings apply.
 
