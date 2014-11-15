@@ -675,6 +675,73 @@ Try making the `ls` program more robust by handling missing command-line argumen
 Multithreading
 --------------
 
+As we have said, the Factor runtime is single-threaded, like Node. Still, one can emulate concurrency in a single-threaded setting by making use of **coroutines**. This are essentially cooperative threads, which periodically release control with the `yield` word, so that the scheduler can decide which coroutine run next.
+
+Although cooperative threads do not allow to make use of multiple cores, they still have some benefits:
+* input/output operations can avoid to block the entire runtime, so that one can implement quite performant applications if I/O is the bottleneck;
+* user interfaces are naturally a multithreaded construct, and they can be implemented in this model, as the listener itself shows;
+* finally, some problems may just naturally be easier to write making use of multithreaded constructs.
+
+For the cases where one wants to make use of multiple cores, Factor offers the possibility of spawning other processes and communicating between them with the use of **channels**, as we will see in a later section.
+
+Threads in Factors are created out of a quotation and a name, with the `spawn` word. Let use use this to print the first few lines of Star Wars, one per second, each line being printed inside its own thread. First, let us write those lines inside a dynamic variable:
+
+    SYMBOL: star-wars
+
+    "A long time ago, in a galaxy far, far away....
+
+    It is a period of civil war. Rebel
+    spaceships, striking from a hidden
+    base, have won their first victory
+    against the evil Galactic Empire.
+
+    During the battle, rebel spies managed
+    to steal secret plans to the Empire's
+    ultimate weapon, the DEATH STAR, an
+    armored space station with enough
+    power to destroy an entire planet.
+
+    Pursued by the Empire's sinister agents,
+    Princess Leia races home aboard her
+    starship, custodian of the stolen plans
+    that can save her people and restore
+    freedom to the galaxy...."
+    "\n" split star-wars set
+
+We will spawn 18 threads, each one printing a line. The operation that a thread must run amounts to
+
+    star-wars get ?nth .
+
+Note that dynamic variables are shared between threads, so each one had access to star-wars. This is fine, since it is read-only, but the usual caveats about shared memory in a multithreaded settings apply.
+
+Let us define a word for the thread workload
+
+    : print-a-line ( i -- ) star-wars get ?nth print ;
+
+If we give the i-th thread the name "i", our example amounts to
+
+    18 [0,b) [
+      [ [ print-a-line ] curry ]
+      [ number>string ]
+      bi spawn
+    ] each
+
+Note the use of `curry` to send i to the quotation that prints the i-th line. This is almost what we want, but it runs too fast. We need to put the thread in sleep for a while. So we `clear` the stack that now contains a lot of thread objects and look for a `sleep` word in the help.
+
+It turns out that `sleep` does exactly what we need, but it takes a **duration** object as input. We can create a duration of i seconds with... well `i seconds`. So we define
+
+    : wait-and-print ( i -- ) dup seconds sleep print-a-line ;
+
+Let us try
+
+    18 [0,b) [
+      [ [ wait-and-print ] curry ]
+      [ number>string ]
+      bi spawn
+    ] each
+
+This is good enough for our simple purpose. In serious applications, theads will be long running. In order to make them cooperate, one can use the `yield` word to signal that the thread has done a unit of work, and other threads can gain control. You also may want to have a look at other words to `stop`, `suspend` or `resume` threads.
+
 Servers and Furnace
 -------------------
 
