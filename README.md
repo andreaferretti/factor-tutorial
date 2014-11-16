@@ -745,6 +745,36 @@ This is good enough for our simple purpose. In serious applications, theads will
 Servers and Furnace
 -------------------
 
+A very common case for using more than one thread is when writing server applications. When writing network applications, it is common to start a thread for each incoming connection (remember that this are green threads, so they are much more lightweight than OS threads).
+
+To simplify this, Factor has the word `spawn-server`, which works like `spawn`, but in addition repeatedly spawns the quotation until it returns `f`. This is still a very low-level word: in reality one has to do much more: listen for TCP connections on a given port, handle connection limits and so on.
+
+The vocabulary `io.servers` allows to write and configure TCP servers. A server is created with the word `<threaded-server>`, which requires an encoding as a parameter. Its slots can the be set to configure logging, connection limits, ports and so on. The most important slot to fill is `handler`, which contains a quotation that is executed for each incoming connection. You can see a very simple example of server with
+
+    "resource:extra/time-server/time-server.factor" edit-file
+
+We will raise the level of abstraction even more and show how to run a simple HTTP server. First, `USE: http.server`.
+
+An HTTP application is built out of a **responder**. A responder is essentially a function from a path and an HTTP request to an HTTP response, but more concretely is anything that implements the method `call-responder*`. Responses are instances of the tuple `response`, so are usually generated calling `<response>` and customizing a few slots. Let us write a simple echo responder:
+
+    TUPLE: echo-responder ;
+
+    M: echo-responder call-responder*
+      drop
+      <response>
+        200 >>code
+        "Document follows" >>message
+        "text/plain" >>content-type
+        swap concat >>body ;
+
+Responders are usually combined to form more complex responders, in order to implement routing and other features. In our simplistic example, we will use just this one responder, and set it globally with
+
+    echo-responder main-responder set-global
+
+Once you have done this, you can start the server with `8080 httpd`- You can then visit `http://localhost:8080/hello/%20/from/%20/factor` in your browser to see your first responder in action. You can then stop the server with `stop-server`.
+
+Now, if this was all that Factor offers to write web applications, it would still be rather low level. In reality, web applications are usually written using a web framework called **Furnace**.
+
 Processes and channels
 ----------------------
 
