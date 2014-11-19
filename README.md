@@ -759,6 +759,8 @@ An HTTP application is built out of a **responder**. A responder is essentially 
 
     TUPLE: echo-responder ;
 
+    : <echo-responder> ( -- responder ) echo-responder new ;
+
     M: echo-responder call-responder*
       drop
       <response>
@@ -769,11 +771,68 @@ An HTTP application is built out of a **responder**. A responder is essentially 
 
 Responders are usually combined to form more complex responders, in order to implement routing and other features. In our simplistic example, we will use just this one responder, and set it globally with
 
-    echo-responder main-responder set-global
+    <echo-responder> main-responder set-global
 
 Once you have done this, you can start the server with `8080 httpd`- You can then visit `http://localhost:8080/hello/%20/from/%20/factor` in your browser to see your first responder in action. You can then stop the server with `stop-server`.
 
 Now, if this was all that Factor offers to write web applications, it would still be rather low level. In reality, web applications are usually written using a web framework called **Furnace**.
+
+Furnace allows us -among other thing - to write more complex actions using a template language. Actually, there are two template languages shipped by default, and we will use **Chloe**. Furnace allows us to use create **page actions** from Chloe templates, and in order to create a responder we will need to add routing.
+
+Let use first investigate a simple example of routing. To do this, we create a special type of responder called a **dispatcher**, that dispatches requests based on path parameters. Let us create a simple dispatcher that will choose between our echo responder and a default responder used to serve static files.
+
+    dispatcher new-dispatcher
+      <echo-responder> "echo" add-responder
+      "/home/andrea" <static> "home" add-responder
+      main-responder set-global
+
+Of course, substitute the path `/home/andrea` with any folder you like. If you start again the server with `8080 httpd`, you should be able to see both our simple echo responder (under `/echo`) and the contents of your files (under `/home`). Notice that directory listing is disabled by default, you can only access the content of files.
+
+Now that you know how to do routing, we can write page actions in Chloe. Things are starting to become complicated, so we scaffold a vocabulary with `"hello-furnace" scaffold-work`. Make it look like this:
+
+
+    ! Copyright (C) 2014 Andrea Ferretti.
+    ! See http://factorcode.org/license.txt for BSD license.
+    USING: accessors furnace.actions http http.server
+      http.server.dispatchers http.server.static kernel sequences ;
+    IN: hello-furnace
+
+
+    TUPLE: echo-responder ;
+
+    : <echo-responder> ( -- responder ) echo-responder new ;
+
+    M: echo-responder call-responder*
+      drop
+      <response>
+        200 >>code
+        "Document follows" >>message
+        "text/plain" >>content-type
+        swap concat >>body ;
+
+    TUPLE: hello-dispatcher < dispatcher ;
+
+    : <example-responder> ( -- responder )
+      hello-dispatcher new-dispatcher
+        <echo-responder> "echo" add-responder
+        "/home/andrea" <static> "home" add-responder
+        <page-action>
+          { hello-dispatcher "greetings" } >>template
+        "chloe" add-responder ;
+
+Most things are the same we have done in the listener. The only difference is that we have added a third responder in our dispatcher, under `chloe`. This responder is created with a page action. The page action has many slots - say to declare the behaviour of receiving the result of a form - but we only set its template. THis is a pair with the dispatcher class and the relative path of the template file.
+
+In order for all this to work, create a file `work/hello-furnace/greetings.xml` with a content like
+
+    <?xml version='1.0' ?>
+
+    <t:chloe xmlns:t="http://factorcode.org/chloe/1.0">
+      <p>Hello from Chloe</p>
+    </t:chloe>
+
+Reload the `hello-furnace` vocabulary and `<example-responder> main-responder set-global`. You should be able to see the results of your efforts under `http://localhost:8080/chloe`. Notice that there was no need to restart the server, but we can change the main responder dynamically.
+
+This ends our very brief tour of Furnace. It actually does much more than this: form validation and handling, authentication, logging and more. But this section is already getting too long, and you will have to find out more in the documentation.
 
 Processes and channels
 ----------------------
