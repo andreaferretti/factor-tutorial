@@ -15,6 +15,8 @@ You may wonder why should you care enough to read this long tutorial. Factor has
 
 In this tutorial, we assume that you have downloaded a copy of Factor and that you are following along with the examples in the listener (the Factor REPL). The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.
 
+I will also assume that you are using some distribution of Linux, but everything should work the same on other systems, provided you adjust the paths in the examples.
+
 Concatenative languages
 -----------------------
 
@@ -894,3 +896,6 @@ We have to balance the last observation with the convenience of having the whole
 - the `monads` vocabulary implements Haskell style monads.
 
 I think these vocabulary are a testament to the power and expressivity of Factor.
+
+    USE: images.http
+    "http://factorcode.org/logo.png" http-image.
