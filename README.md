@@ -837,6 +837,30 @@ This ends our very brief tour of Furnace. It actually does much more than this: 
 Processes and channels
 ----------------------
 
+As I said, Factor is single-threaded from the point of view of the OS. If we want to make use of multiple cores, we need a way to spawn Factor processes and communicate between them. Factor allows this with the use of **channels**.
+
+As a warm-up, we will use a channel to communicate between threads in the same process. As expected, `USE: channels`. You can create a channel with `<channel>`, write to it with `to` and read from it with `from`. Note that both operations are blocking: `to` will block until the value is read in a different thread, and `from` will block until a value is available.
+
+We create a channel and give it a name with
+
+    SYMBOL: ch
+    <channel> ch set
+
+Then we write on it in a separate thread, in order not to block the UI
+
+    [ "hello" ch get to ] in-thread
+
+We can then read the value in the UI with
+
+    ch get from
+
+We can also invert the order:
+
+    [ ch get from . ] in-thread
+    "hello" ch get to
+
+This works fine, since we had set the reader first.
+
 Where to go from here?
 ----------------------
 
