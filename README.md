@@ -870,4 +870,27 @@ This works fine, since we had set the reader first.
 Where to go from here?
 ----------------------
 
-tips, drawbacks, other vocabs: exceptions, macros, models, pattern matching, monads...
+We have covered a lot of ground, and I hope that by now you have a feeling whether Factor clicks for you. You can now work your way through the documentation, and hopefully contribute to Factor yourself.
+
+Let me end with a few tips:
+
+- when starting to write Factor, it is *very* easy to deal a lot with stack shuffling. Learn the combinators well, and do not fear to throw away oyur first examples;
+- no definition is too short: aim for one line;
+- the help system and the inspector are your best friends.
+
+To be fair, we also have to mention some drawbacks of Factor:
+
+- first, the community is really small. What they have done is impressive, but do not hope to find a lot of information on the internet;
+- the concatenative model is very powerful, but also very hard to get right;
+- Factor lacks threads: although the distributed processes make up for it, they incur some cost in serialization;
+- finally, Factor does not currently have a package manager, and this probably hinders contribution.
+
+We have to balance the last observation with the convenience of having the whole source tree of Factor available in the image, which certainly makes it easier to learn about libraries. Let me suggest a few vocabularies that you may want to have a look at:
+
+- first, I have not talked a lot about errors and exceptions. Learn more with `"errors" help`;
+- the `macros` vocabulary implements a form of compile time metaprogramming less general than parsing words, but still quite convenient;
+- the `models` vocabulary lets you implement a form of dataflow programming using objects with observable slots;
+- the `match` vocabulary implements a form of pattern matching;
+- the `monads` vocabulary implements Haskell style monads.
+
+I think these vocabulary are a testament to the power and expressivity of Factor.
