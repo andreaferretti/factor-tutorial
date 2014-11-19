@@ -103,7 +103,7 @@ If you try to write
 
     : ! ( m n -- n! ) [1,b] 1 [ * ] reduce ;
 
-Factor will signal an error that the number of inputs is not consistent. To restore the previous correct definition press `Ctrl+P` two times to get back to the previous input and the enter it.
+Factor will signal an error that the number of inputs is not consistent. To restore the previous correct definition press `Ctrl+P` two times to get back to the previous input and then enter it.
 
 We can think at the stack effects in definitions both as a documenting tool and as a simple type system, which nevertheless does catch a few errors.
 
