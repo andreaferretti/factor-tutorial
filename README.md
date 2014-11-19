@@ -740,6 +740,12 @@ Let us try
       bi spawn
     ] each
 
+Instead of `spawn` we can also use `in-thread` which uses a dummy thread name and discards the returned thread, simplifying the above to
+
+    18 [0,b) [
+      [ wait-and-print ] curry in-thread
+    ] each
+
 This is good enough for our simple purpose. In serious applications, theads will be long running. In order to make them cooperate, one can use the `yield` word to signal that the thread has done a unit of work, and other threads can gain control. You also may want to have a look at other words to `stop`, `suspend` or `resume` threads.
 
 Servers and Furnace
