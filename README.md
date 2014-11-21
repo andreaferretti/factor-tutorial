@@ -911,6 +911,27 @@ Now, we reimport `send` just to be sure (there is an overlap with a word having 
 
 and we can start sending numbers to it. Try `3 over send`, and then `8 over send` - you should see the running total printed in the other Factor instance.
 
+What about channels? We go back to our server, and start a channel there, just as above. This time, though, we `publish` it to make it available remotely:
+
+    USING: channels channels.remote ;
+    <channel> dup publish
+
+What you get in return is an id you can use remotely to communicate. For instance, I just got `72581372615274718877979307388951222312843084896785643440879198703359628058956` (yes, they really want to be sure it is unique!).
+
+We will wait on this channel, thereby blocking the UI:
+
+    swap from .
+
+In the other Factor instance we use the id to get a reference to the remote channel and write to it
+
+    f 9000 <inet4> 72581372615274718877979307388951222312843084896785643440879198703359628058956 <remote-channel>
+    "Hello, channels" over to
+
+In the server instance, the message should be printed.
+
+Remote channels and threads are both useful to implement distributed applications and make good use of multicore servers. Of course, it remains the question how to start worker nodes in the first place. Here we have done it manually - if the set of nodes is fixed, this is actually an option.
+
+Otherwise, one could use the `io.launcher` vocabulary to start other Factor instances programmatically.
 
 Where to go from here?
 ----------------------
@@ -938,7 +959,7 @@ We have to balance the last observation with the convenience of having the whole
 - the `match` vocabulary implements a form of pattern matching;
 - the `monads` vocabulary implements Haskell style monads.
 
-I think these vocabulary are a testament to the power and expressivity of Factor.
+I think these vocabulary are a testament to the power and expressivity of Factor. Happy hacking!
 
     USE: images.http
     "http://factorcode.org/logo.png" http-image.
