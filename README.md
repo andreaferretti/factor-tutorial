@@ -847,7 +847,7 @@ This ends our very brief tour of Furnace. It actually does much more than this: 
 Processes and channels
 ----------------------
 
-As I said, Factor is single-threaded from the point of view of the OS. If we want to make use of multiple cores, we need a way to spawn Factor processes and communicate between them. Factor implements two different models of message-passing concurrency: the actor model, which is based on the idea of sending messages asynchronously between thread, and the CSP model, based on the use of **channels**.
+As I said, Factor is single-threaded from the point of view of the OS. If we want to make use of multiple cores, we need a way to spawn Factor processes and communicate between them. Factor implements two different models of message-passing concurrency: the actor model, which is based on the idea of sending messages asynchronously between threads, and the CSP model, based on the use of **channels**.
 
 As a warm-up, we will make a simple example of communication between threads in the same process.
 
