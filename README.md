@@ -573,6 +573,8 @@ All the tools we have seen in this section should be used when necessary, as the
 Input/Output
 ------------
 
+We now leave the tour of the language, and start investigating how to interact with the outside world. I will begin in this section with some examples of input/output, but inevitably this will lead into a discussion of asynchrony. The rest of the tutorial will then go in more detail about parallel and distributed computing.
+
 Factor implements efficient asynchronous input/output facilities, similar to NIO on the JVM or the Node.js I/O system. This means that input and output operations are performed in the background, leaving the foreground task free to perform work while the disk is spinning or the network is buffering packets. Factor is currently single threaded, but asynchrony allows it to be rather performant for applications that are I/O-bound.
 
 All of Factor input/output words are centered on **streams**. Streams are lazy sequences which can be read or written to, typical examples being files, network ports or the standard input and output. Factor holds a couple of dynamic variables called `input-stream` and `output-stream`, which are used by most I/O words. These variables can be rebound locally using `with-input-stream`, `with-output-stream` and `with-streams`. When you are in the listener, the default streams write and read in the listener, but once you deploy your application as an executable, they are usually bound to the standard input and output of your console.
@@ -845,9 +847,22 @@ This ends our very brief tour of Furnace. It actually does much more than this: 
 Processes and channels
 ----------------------
 
-As I said, Factor is single-threaded from the point of view of the OS. If we want to make use of multiple cores, we need a way to spawn Factor processes and communicate between them. Factor allows this with the use of **channels**.
+As I said, Factor is single-threaded from the point of view of the OS. If we want to make use of multiple cores, we need a way to spawn Factor processes and communicate between them. Factor implements two different models of message-passing concurrency: the actor model, which is based on the idea of sending messages asynchronously between thread, and the CSP model, based on the use of **channels**.
 
-As a warm-up, we will use a channel to communicate between threads in the same process. As expected, `USE: channels`. You can create a channel with `<channel>`, write to it with `to` and read from it with `from`. Note that both operations are blocking: `to` will block until the value is read in a different thread, and `from` will block until a value is available.
+As a warm-up, we will make a simple example of communication between threads in the same process.
+
+    FROM: concurrency.messaging => send receive ;
+
+We can start a thread that will receive a message and print it repeatedly:
+
+    : print-repeatedly ( -- ) receive . print-repeatedly ;
+    [ print-repeatedly ] "printer" spawn
+
+A thread whose quotation starts with `receive` and calls itself recursively behaves like an actor in Erlang or Akka. We can then use `send` to send messages to it. Try `"hello" over send` and then `"threading" over send`.
+
+Channels are a slightly different abstractions. They decouple the sender and the receiver, and are usually used synchronously. For instance, one side can receive from a channel before the some other party sends something to it. This just means that the receiving end yields control to the scheduler, which waits for the send of the message before giving control to the receiver again. This feature sometimes makes it easier to synchronize multithreaded applications.
+
+Again, we first use a channel to communicate between threads in the same process. As expected, `USE: channels`. You can create a channel with `<channel>`, write to it with `to` and read from it with `from`. Note that both operations are blocking: `to` will block until the value is read in a different thread, and `from` will block until a value is available.
 
 We create a channel and give it a name with
 
