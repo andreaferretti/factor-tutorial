@@ -860,7 +860,7 @@ We can start a thread that will receive a message and print it repeatedly:
 
 A thread whose quotation starts with `receive` and calls itself recursively behaves like an actor in Erlang or Akka. We can then use `send` to send messages to it. Try `"hello" over send` and then `"threading" over send`.
 
-Channels are a slightly different abstractions. They decouple the sender and the receiver, and are usually used synchronously. For instance, one side can receive from a channel before the some other party sends something to it. This just means that the receiving end yields control to the scheduler, which waits for the send of the message before giving control to the receiver again. This feature sometimes makes it easier to synchronize multithreaded applications.
+Channels are a slightly different abstractions, used for instance in Go and in Clojure core.async. They decouple the sender and the receiver, and are usually used synchronously. For instance, one side can receive from a channel before the some other party sends something to it. This just means that the receiving end yields control to the scheduler, which waits for the send of the message before giving control to the receiver again. This feature sometimes makes it easier to synchronize multithreaded applications.
 
 Again, we first use a channel to communicate between threads in the same process. As expected, `USE: channels`. You can create a channel with `<channel>`, write to it with `to` and read from it with `from`. Note that both operations are blocking: `to` will block until the value is read in a different thread, and `from` will block until a value is available.
 
@@ -883,6 +883,34 @@ We can also invert the order:
     "hello" ch get to
 
 This works fine, since we had set the reader first.
+
+Now, for the interesting part: we will start a second Factor instance and communicate via message sending. Factor transparently supports sending messages over the network, serializing values with the `serialize` vocabulary.
+
+Start another instance of Factor, and run a node server on it. We will use the word `<inet4>`, that creates an IPv4 address from a host and a port, and the `<node-server>` constructor
+
+    USE: concurrency.distributed
+    f 9000 <inet4> <node-server> start-server
+
+Here we have used `f` as host, which just stands for localhost. We will also start a thread that keeps a running count of the numbers it has received.
+
+    FROM: concurrency.messaging => send receive ;
+    : add ( x -- y ) receive + dup . add ;
+    [ 0 add ] "adder" spawn
+
+Once we have started the server, we can make a thread available with `register-remote-thread`:
+
+    dup name>> register-remote-thread
+
+Now we switch to the other instance of Factor. Here we will receive a reference to the remote thread and start sending numbers to it. The address of a thread is just the address of its server and the name we have registered the thread with, so we obtain a reference to our adder thread with
+
+    f 9000 <inet4> "adder" <remote-thread>
+
+Now, we reimport `send` just to be sure (there is an overlap with a word having the same name in `io.sockets`, that we have imported)
+
+    FROM: concurrency.messaging => send receive ;
+
+and we can start sending numbers to it. Try `3 over send`, and then `8 over send` - you should see the running total printed in the other Factor instance.
+
 
 Where to go from here?
 ----------------------
