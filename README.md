@@ -20,9 +20,11 @@ I will also assume that you are using some distribution of Linux, but everything
 Concatenative languages
 -----------------------
 
-Factor is a *concatenative* programming language in the spirit of Forth. What does this even mean? In a concatenative language, there is essentially only one operation, which is function composition. Since function composition is so pervasive, it is usually implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (usually, functions are read from left to right, so this means first execute `f`, then `g`, unlike in mathematical notation).
+Factor is a *concatenative* programming language in the spirit of Forth. What does this even mean?
 
-This requires some explanation, since functions will usually have multiple inputs and outputs, and it is not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. For this to work, `f` and `g` have essentially to be functions which take and return the whole state of the world.
+Imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it is usually implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (usually, functions are read from left to right, so this means first execute `f`, then `g`, unlike in mathematical notation).
+
+This requires some explanation, since functions will usually have multiple inputs and outputs, and it is not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so this is the whole state of the world, as far as `g` is concerned. Hence, to make this work, functions have to thread the global state, passing it to each other.
 
 There are various ways this global state can be encoded. The most naive would use a hashmap mapping variable names to their values. This turns out to be too flexible: if every function can access randomly any piece of global state, there is little control on what functions can do, little encapsulation and ultimately programs become an unstructured mess of routines mutating global variables.
 
