@@ -1,19 +1,19 @@
 A long Factor tutorial
 ======================
 
-Factor is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concepts like folding, higher-order functions or currying.
+[Factor](http://factorcode.org) is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concepts like folding, higher-order functions, or currying.
 
-Even if Factor is a rather niche language, it is mature and features a comprehensive standard library covering tasks from JSON serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dinamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O - much like node, but with a much simpler model for cooperative multithreading.
+Even if Factor is a rather niche language, it is mature and features a comprehensive standard library covering tasks from JSON serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dynamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O - much like node, but with a much simpler model for cooperative multithreading.
 
 You may wonder why should you care enough to read this long tutorial. Factor has a few significant advantages over other languages, most arising from the fact that it has essentially no syntax:
 
 * refactoring is very easy, leading to short and meaningful definitions;
-* it is extremely succint, letting the programmer concentrate on what has to be done instead of boilerplate;
+* it is extremely succinct, letting the programmer concentrate on what has to be done instead of boilerplate;
 * it has powerful metaprogramming capabilities, exceeding those of LISPs;
 * it is ideal to embed DSLs;
 * it integrates easily with powerful tools.
 
-In this tutorial, we assume that you have downloaded a copy of Factor and that you are following along with the examples in the listener (the Factor REPL). The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.
+In this tutorial, we assume that you have [downloaded a copy of Factor](http://factorcode.org) and that you are following along with the examples in the listener (the Factor REPL). The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.
 
 I will also assume that you are using some distribution of Linux, but everything should work the same on other systems, provided you adjust the paths in the examples.
 
@@ -26,9 +26,9 @@ Imagine a world where every value is a function, and the only operation allowed 
 
 This requires some explanation, since functions will usually have multiple inputs and outputs, and it is not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so this is the whole state of the world, as far as `g` is concerned. Hence, to make this work, functions have to thread the global state, passing it to each other.
 
-There are various ways this global state can be encoded. The most naive would use a hashmap mapping variable names to their values. This turns out to be too flexible: if every function can access randomly any piece of global state, there is little control on what functions can do, little encapsulation and ultimately programs become an unstructured mess of routines mutating global variables.
+There are various ways this global state can be encoded. The most naive would use a hashmap that maps variable names to their values. This turns out to be too flexible:  if every function can access randomly any piece of global state, there is little control on what functions can do, little encapsulation, and ultimately programs become an unstructured mess of routines mutating global variables.
 
-It works well in practice to represent the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (for instance `swap`, that exchanges the two elements on top), then it becomes possible to refer to values more down the stack, but the farthest the position, the hardest it becomes to refer to it.
+It works well in practice to represent the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (e.g., `swap`, that exchanges the two elements on top), then it becomes possible to refer to values more down the stack, but the farthest the position, the hardest it becomes to refer to it.
 
 So, functions are encouraged to stay small and only refer to the top two or three elements. In a sense, there is no more a distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.
 
