@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Factor tutorial by andreaferretti</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Factor tutorial</h1>
+        <h2>From function composition to distributed programming</h2>
+        <a href="https://github.com/andreaferretti/factor-tutorial" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a id="a-long-factor-tutorial" class="anchor" href="#a-long-factor-tutorial" aria-hidden="true"><span class="octicon octicon-link"></span></a>A long Factor tutorial</h1>
+
+<p>Factor is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concepts like folding, higher-order functions or currying.</p>
+
+<p>Even if Factor is a rather niche language, it is mature and features a comprehensive standard library covering tasks from JSON serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dinamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O - much like node, but with a much simpler model for cooperative multithreading.</p>
+
+<p>You may wonder why should you care enough to read this long tutorial. Factor has a few significant advantages over other languages, most arising from the fact that it has essentially no syntax:</p>
+
+<ul>
+<li>refactoring is very easy, leading to short and meaningful definitions;</li>
+<li>it is extremely succint, letting the programmer concentrate on what has to be done instead of boilerplate;</li>
+<li>it has powerful metaprogramming capabilities, exceeding those of LISPs;</li>
+<li>it is ideal to embed DSLs;</li>
+<li>it integrates easily with powerful tools.</li>
+</ul>
+
+<p>In this tutorial, we assume that you have downloaded a copy of Factor and that you are following along with the examples in the listener (the Factor REPL). The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.</p>
+
+<p>I will also assume that you are using some distribution of Linux, but everything should work the same on other systems, provided you adjust the paths in the examples.</p>
+
+<h2>
+<a id="concatenative-languages" class="anchor" href="#concatenative-languages" aria-hidden="true"><span class="octicon octicon-link"></span></a>Concatenative languages</h2>
+
+<p>Factor is a <em>concatenative</em> programming language in the spirit of Forth. What does this even mean?</p>
+
+<p>Imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it is usually implicit, and functions can be literally juxtaposed in order to compose them. So if <code>f</code> and <code>g</code> are two functions, their composition is just <code>f g</code> (usually, functions are read from left to right, so this means first execute <code>f</code>, then <code>g</code>, unlike in mathematical notation).</p>
+
+<p>This requires some explanation, since functions will usually have multiple inputs and outputs, and it is not always the case that the output of <code>f</code> matches the input of <code>g</code>. For instance, <code>g</code> may need access to values computed by earlier functions. But the only thing that <code>g</code> can see is the output of <code>f</code>, so this is the whole state of the world, as far as <code>g</code> is concerned. Hence, to make this work, functions have to thread the global state, passing it to each other.</p>
+
+<p>There are various ways this global state can be encoded. The most naive would use a hashmap mapping variable names to their values. This turns out to be too flexible: if every function can access randomly any piece of global state, there is little control on what functions can do, little encapsulation and ultimately programs become an unstructured mess of routines mutating global variables.</p>
+
+<p>It works well in practice to represent the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (for instance <code>swap</code>, that exchanges the two elements on top), then it becomes possible to refer to values more down the stack, but the farthest the position, the hardest it becomes to refer to it.</p>
+
+<p>So, functions are encouraged to stay small and only refer to the top two or three elements. In a sense, there is no more a distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.</p>
+
+<p>Notice that if every function takes the state of the whole world and returns the next state, its input is never used anymore. So, even if it is more convenient to think of pure functions from stacks to stacks, the semantics of the language can be implemented more efficiently by mutating a fixed stack.</p>
+
+<p>This leaves Factor in a strange position, whereby it is both extremely functional - only allowing to compose simpler functions into more complex ones - and largely imperative - describing operations on a mutable stack.</p>
+
+<h2>
+<a id="playing-with-the-stack" class="anchor" href="#playing-with-the-stack" aria-hidden="true"><span class="octicon octicon-link"></span></a>Playing with the stack</h2>
+
+<p>Let us start looking what Factor actually feels like. Our first words will be literals, like <code>3</code>, <code>12.58</code> or <code>"Chuck Norris"</code>. Literals can be thought as functions that push themselves on the stack. Try writing <code>5</code> in the listener and then press enter to confirm. You will see that the stack, initially empty, now looks like</p>
+
+<pre><code>5
+</code></pre>
+
+<p>You can enter more that one number, separated by spaces, like <code>7 3 1</code>, and get</p>
+
+<pre><code>5
+7
+3
+1
+</code></pre>
+
+<p>(the interface shows the top of the stack on the bottom). What about operations? If you write <code>+</code>, you will run the <code>+</code> function, which pops the two topmost elements and pushes their sum, leaving us with</p>
+
+<pre><code>5
+7
+4
+</code></pre>
+
+<p>You can put, as before, more inputs in a single line, so for instance <code>- *</code> will leave the single number <code>15</code> on the stack (do you see why?). The function <code>.</code> (a dot) prints this item, while popping it out of the stack, leaving the stack empty.</p>
+
+<p>If we write everything on one line, our program so far looks like</p>
+
+<pre><code>5 7 3 1 + - * .
+</code></pre>
+
+<p>which shows the peculiar way of doing arithmetics by putting the arguments first and the operator last - a convention which is called Reverse Polish Notation (RPN). Notice that this requires no parenthesis, unlike the Lisp convention where the operator comes first, and no precedence rules, unlike most other systems. For instance in any Lisp, the same computation would be written like</p>
+
+<pre><code>(* 5 (- 7 (+ 3 1)))
+</code></pre>
+
+<p>Also notice that we have been able to split our computation rather arbitrarily and that each subpiece of our line made sense in itself.</p>
+
+<h2>
+<a id="defining-our-first-word" class="anchor" href="#defining-our-first-word" aria-hidden="true"><span class="octicon octicon-link"></span></a>Defining our first word</h2>
+
+<p>We will now define our first function. Factor has a slightly odd naming: since functions are just written from left to right, they are simply called <strong>words</strong>, and this is what we will do from now on. Modules in Factor define words in terms of previous words and are then called <strong>vocabularies</strong>.</p>
+
+<p>We will want to compute the factorial. To start with a concrete example, we compute the factorial of <code>10</code>, so we start by writing <code>10</code> on the stack. Now, the factorial is the product of the numbers from <code>1</code> to <code>10</code>, so we should produce such a list of numbers first.</p>
+
+<p>The function to produce a range is reasonably called <code>[a,b]</code> (tokenization is trivial in Factor, as words are always space separated, and this allows you to use any combination of non-whitespace characters as an identifier). In our case one of the extremes is just <code>1</code>, so we can use the simpler word <code>[1,b]</code> instead. If you write that in the listener, you will be prompted with a choice, because the name <code>[1,b]</code> is not imported by default. Factor is able to suggest to import the <code>math.ranges</code> vocabulary, so choose that option and proceed.</p>
+
+<p>You should now have on your stack a rather opaque structure which looks like</p>
+
+<pre><code>T{ range f 1 10 1 }
+</code></pre>
+
+<p>This is because our range functions are lazy. To confirm that we actually have created the list of numbers from <code>1</code> to <code>10</code>, we convert it into an array using the word <code>&gt;array</code>. Your stack should now look like</p>
+
+<pre><code>{ 1 2 3 4 5 6 7 8 9 10 }
+</code></pre>
+
+<p>which is promising.</p>
+
+<p>Next, we want to take the product of those numbers. In many languages, this could be done with a function called reduce or fold. Let us look for one. Pressing <code>F1</code> will open a contextual help, where you can search for <code>reduce</code>. It turns out that <code>reduce</code> is actually the word we are looking for, but at this point it may not be obvious how to use it.</p>
+
+<p>Try writing <code>1 [ * ] reduce</code> and look at the output: it is indeed the factorial of <code>10</code>. Now, <code>reduce</code> usually takes three arguments: a sequence (and we had one), a starting point (and this is the <code>1</code>) and a binary operation. This must certainly be the <code>*</code>, but what about those square brackets around it?</p>
+
+<p>If we had written just <code>*</code>, Factor would have tried to apply multiplication to the topmost two elements, which is not what we wanted. What we need is a way to mention a word without applying it. Keeping our textual metaphor, this mechanism is called <strong>quotation</strong>. To quote one or more words, you just surround them by <code>[</code> and <code>]</code> (leaving spaces). What you get is akin to an anonymous function in other languages.</p>
+
+<p>Let us <code>drop</code> the result to empty the stack, and try writing what we have done so far in a single shot: <code>10 [1,b] 1 [ * ] reduce</code>. This will output <code>3628800</code> as expected.</p>
+
+<p>We now want to define a word that can be called whenever we want. We will call our word <code>!</code> as it is customary. To define it, we need to use the word <code>:</code>. Then we put the name of the word being defined, the <strong>stack effects</strong> and finally the body, ending with the <code>;</code> word:</p>
+
+<pre><code>: ! ( n -- n! ) [1,b] 1 [ * ] reduce ;
+</code></pre>
+
+<p>What are the stack effects? These are the part like <code>( n -- n! )</code> in our case. They have no effect on the function, but allow you to name your inputs and outputs for documenting purposes. You can use any identifier to name them, and Factor will only make a consistency check that the number of inputs and outputs agrees with what the body does.</p>
+
+<p>If you try to write</p>
+
+<pre><code>: ! ( m n -- n! ) [1,b] 1 [ * ] reduce ;
+</code></pre>
+
+<p>Factor will signal an error that the number of inputs is not consistent. To restore the previous correct definition press <code>Ctrl+P</code> two times to get back to the previous input and then enter it.</p>
+
+<p>We can think at the stack effects in definitions both as a documenting tool and as a simple type system, which nevertheless does catch a few errors.</p>
+
+<p>In any case, you have succesfully defined your first word: if you write <code>10 !</code> in the listener you can prove it.</p>
+
+<p>Notice that the <code>1 [ * ] reduce</code> part of the definition sort of makes sense on its own, being the product of a sequence. The nice thing about a concatenative language is that we can just factor this part out and write</p>
+
+<pre><code>: prod ( {x1,...,xn} -- x1*...*xn ) 1 [ * ] reduce ;
+: ! ( n -- n! ) [1,b] prod ;
+</code></pre>
+
+<p>Our definitions have become simpler and there was no need to pass parameters, rename local variables or anything that would have been necessary to factor out a part of the definition in a different language.</p>
+
+<h2>
+<a id="parsing-words" class="anchor" href="#parsing-words" aria-hidden="true"><span class="octicon octicon-link"></span></a>Parsing words</h2>
+
+<p>If you have paid attention until now, you will realized that I have lied to you. I have said that each word acts on the stack in order, but there a few words like <code>[</code>, <code>]</code>, <code>:</code> and <code>;</code> that certainly seems not to abide to this rule.</p>
+
+<p>In fact these are <strong>parsing words</strong> and behave differently from simpler words like <code>5</code>, <code>[1,b]</code> or <code>drop</code>. We will get into more detail when we talk about metaprogramming, but for now it is enough to know that parsing words are special.</p>
+
+<p>They are not defined using <code>:</code>, but using <code>SYNTAX:</code> instead. When a parsing words is encountered, it can interact with the parser using a well-defined API to influence how successive words are parsed. For instance <code>:</code> asks the next tokens from the parsers until <code>;</code> is found and tried to compile that stream of tokens into a word definition.</p>
+
+<p>A common use of parsing words is to define literals. For instance, <code>{</code> is a parsing word that starts an array definition and is terminated by <code>}</code>. Everything in-between is part of the array. An example of array that we have seen before is <code>{ 1 2 3 4 5 6 7 8 9 10 }</code>.</p>
+
+<p>There are also literals for hashmaps, like <code>H{ { "Perl" "Larry Wall" } { "Factor" "Slava Pestov" } { "Scala" "Martin Odersky" } }</code>, or byte arrays, like <code>B{ 1 14 18 23 }</code>.</p>
+
+<p>Other uses of parsing word include the module system, the object oriented features of Factor, enums, memoized functions, privacy modifiers and more. In theory, even <code>SYNTAX:</code> can be defined in terms of itself, although of course the system has to be bootstrapped somehow.</p>
+
+<h2>
+<a id="stack-shuffling" class="anchor" href="#stack-shuffling" aria-hidden="true"><span class="octicon octicon-link"></span></a>Stack shuffling</h2>
+
+<p>Now that you know the basics of Factor, you may want to start assembling more complex words. This sometimes may require to use variables that are not on top of the stack, or to use variables more that once. There are a few words that can be used to this effect. I will mention them now, since you'd better be aware of them, but warn you that code using many of those words can quickly become hard to write and harder to read. It requires mentally simulating moving values on a stack, which is not a natural way to program. We will see a much more effective way to handle most needs in next section.</p>
+
+<p>I will just write the most common shuffling words together with their effect on the stack. Feel free to try them in the listener, and explore the online help to find out more.</p>
+
+<pre><code>dup ( x -- x x )
+drop ( x -- )
+swap ( x y -- y x )
+over ( x y -- x y x )
+dupd ( x y -- x x y )
+swapd ( x y z -- y x z )
+nip ( x y -- y )
+rot ( x y z -- y z x )
+-rot ( x y z -- z x y )
+2dup ( x y -- x y x y )
+</code></pre>
+
+<h2>
+<a id="combinators" class="anchor" href="#combinators" aria-hidden="true"><span class="octicon octicon-link"></span></a>Combinators</h2>
+
+<p>Although the words mentioned in the previous paragraph are occasionally useful (especially <code>dup</code>, <code>drop</code> and <code>swap</code>), one should aim to write code that does as little stack shuffling as possible. This requires a certain practice in putting the function arguments in the right order from the start.</p>
+
+<p>Nevertheless, there are certain patterns of use that are better abstracted away into their own words. For instance, say we want to define a word to determine whether a given number <code>n</code> is prime. A simple algorithm would be to test each number from <code>2</code> to the square root of <code>n</code> and see whether it is a divisor of <code>n</code>.</p>
+
+<p>This immediately shows that <code>n</code> is used in two places: as an upper bound for the sequence, and as the number to test for divisibility. The word <code>bi</code> applies two different quotations to an element on the stack, and this is precisely what we need. For instance <code>5 [ 2 * ] [ 3 + ] bi</code> yields</p>
+
+<pre><code>10
+8
+</code></pre>
+
+<p>To continue with our example, will need a word to test divisibility, and a quick search in the online help shows that <code>divisor?</code> is what we want. We will also need a way to make a range starting from <code>2</code>, which we can define like</p>
+
+<pre><code>: [2,b] ( n -- {2,...,n} ) 2 swap [a,b] ; inline
+</code></pre>
+
+<p>What's up with that <code>inline</code> word? This is one of the modifiers we can use after defining a word, another one being <code>recursive</code>. This will allow us to have the definition of the word inlined wherever it is used, rather than incurring a function call.</p>
+
+<p>It may also help to have the arguments for divisibility in the other direction, so we define</p>
+
+<pre><code>: multiple? ( a b -- ? ) swap divisor? ; inline
+</code></pre>
+
+<p>Now, producing the range of numbers from <code>2</code> to the square root of <code>n</code> is easy: <code>sqrt floor [2,b]</code> (<code>floor</code> is not even necessary, as <code>[a,b]</code> works for non-integer bounds). What about the second function?</p>
+
+<p>We must produce a function that test for being a divisor of <code>n</code> - in other words we need to partially apply the word <code>multiple?</code>. This can be done with the word <code>curry</code>, like this: <code>[ multiple? ] curry</code>.</p>
+
+<p>Finally, once we have the range and the test function on the stack, we can test whether any element satisfies the divisibility with <code>any?</code>. Our full definition looks like</p>
+
+<pre><code>: prime? ( n -- ? ) [ sqrt [2,b] ] [ [ multiple? ] curry ] bi any? not ;
+</code></pre>
+
+<p>Altough the definition is slightly complicated, the stack shuffling is minimal and limited to the small helper functions, which are much simpler to reason about than <code>prime?</code>.</p>
+
+<p>Notice that our <code>prime?</code> word uses two levels of quotation nesting. In general, Factor words tend to be rather shallow, using one level of nesting for each higher-order function, unlike Lisps or more generally languages based on the lambda calculus, which use one level of nesting for each function, higher-order or not.</p>
+
+<p>Many more combinators exists other than <code>bi</code> (and its relative <code>tri</code>), and you should become acquainted at least with <code>bi*</code> and <code>bi@</code>.</p>
+
+<h2>
+<a id="vocabularies" class="anchor" href="#vocabularies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Vocabularies</h2>
+
+<p>It is now time to start writing your functions in files and learn how to import them in the listener. Factor organizes words into nested namespaces called <strong>vocabularies</strong>. You can import all names from a vocabulary with the word <code>USE:</code>. In fact, you may have seen something like</p>
+
+<pre><code>USE: math.ranges
+</code></pre>
+
+<p>when you asked the listener to import the word <code>[1,b]</code> for you. You can also use more than one vocabulary at a time with the word <code>USING:</code>, which is followed by a list of vocabularies and terminated by <code>;</code>, like</p>
+
+<pre><code>USING: math.ranges sequences.deep ;
+</code></pre>
+
+<p>Finally, you define the vocabulary where your definitions are stored with the word <code>IN:</code>. If you search the online help for a word you have defined so far, like <code>prime?</code>, you will see that your definitions have been grouped under the default <code>scratchpad</code> vocabulary. By the way, this shows that the online help automatically collects information about your own words, which is a very useful feature.</p>
+
+<p>There are a few more words, like <code>QUALIFIED:</code>, <code>FROM:</code>, <code>EXCLUDE:</code> and <code>RENAME:</code>, that allow more fine-grained control over the imports, but <code>USING:</code> is the most common.</p>
+
+<p>On disk, vocabularies are stored under a few root directories, much like with the classpath in JVM languages. By default, the system starts looking up into the directories <code>basis</code>, <code>core</code>, <code>extra</code>, <code>work</code> under the Factor home. You can add more, both at runtime with the word <code>add-vocab-root</code>, and by creating a configuration file <code>.factor-rc</code>, but for now we will store our vocabularies under the <code>work</code> directory, which is reserved for the user.</p>
+
+<p>Generate a template for a vocabulary writing</p>
+
+<pre><code>USE: tools.scaffold
+"github.tutorial" scaffold-work
+</code></pre>
+
+<p>You will find a file <code>work/github/tutorial/tutorial.factor</code> containing an empty vocabulary. You can add the definitions of the previous paragraph, so that it looks like</p>
+
+<pre><code>! Copyright (C) 2014 Andrea Ferretti.
+! See http://factorcode.org/license.txt for BSD license.
+USING: ;
+IN: github.tutorial
+
+: [2,b] ( n -- {2,...,n} ) 2 swap [a,b] ; inline
+
+: multiple? ( a b -- ? ) swap divisor? ; inline
+
+: prime? ( n -- ? ) [ sqrt [2,b] ] [ [ multiple? ] curry ] bi any? not ;
+</code></pre>
+
+<p>Since the vocabulary was already loaded when you scaffolded it, we need a way to refresh it from disk. You can do this with <code>"github.tutorial" refresh</code>. There is also a <code>refresh-all</code> word, with a shortcut <code>F2</code>.</p>
+
+<p>You will be prompted a few times to use vocabularies, since your <code>USING:</code> statement is empty. After having accepted all of them, Factor suggests you a new header with all the needed imports:</p>
+
+<pre><code>USING: kernel math.functions math.ranges sequences ;
+IN: github.tutorial
+</code></pre>
+
+<p>You now want to come back and edit the file to add this header. Of course, you still have the file open your editor, but if this was not the case, you could make use of Factor editor integration.</p>
+
+<p>For instance, I am using Sublime Text right now, so I load the integration with</p>
+
+<pre><code>USE: editors.sublime
+</code></pre>
+
+<p>After having done that, I can edit, say, the <code>multiple?</code> word with <code>\ multiple? edit</code>. I find Sublime Text open on the relevant line of the right file. Locate your favorite editor with the online help and do the same. This also works for words in the Factor distribution, although it may be a bad idea to modify them.</p>
+
+<p>This <code>\</code> word requires a little explanation. It works like a sort of escape, allowing us to put a reference to the next word on the stack, without executing it. This is exactly what we need, because <code>edit</code> is a word that takes words themselves as arguments. This mechanism is similar to quotations, but while a quotation creates a new anonymous function, here we are directly refering to the word <code>multiple?</code>.</p>
+
+<p>Back to our task, you may notice that the words <code>[2,b]</code> and <code>multiple?</code> are just helper functions that you may not want to expose directly. To hide them from view, you can wrap them in a private block like this</p>
+
+<pre><code>&lt;PRIVATE
+
+: [2,b] ( n -- {2,...,n} ) 2 swap [a,b] ; inline
+
+: multiple? ( a b -- ? ) swap divisor? ; inline
+
+PRIVATE&gt;
+</code></pre>
+
+<p>After making this change and refreshed the vocabulary, you will see that the listener is not able to refer to words like <code>[2,b]</code> anymore. The <code>&lt;PRIVATE</code> word works by putting all definitions in the private block under a different vocabulary, in our case <code>github.tutorial.private</code>.</p>
+
+<p>It is still possible to refer to words in private vocabularies, as you can confirm by searching for <code>[2,b]</code> in the online help, but of course this is discouraged, since people do not guarantee any API stability for private words. Words under <code>github.tutorial</code> can refer to words in <code>github.tutorial.private</code> directly, like <code>prime?</code> does.</p>
+
+<h2>
+<a id="tests-and-documentation" class="anchor" href="#tests-and-documentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tests and documentation</h2>
+
+<p>This is a good time to start writing some unit tests. You can create a skeleton with</p>
+
+<pre><code>"github.tutorial" scaffold-tests
+</code></pre>
+
+<p>You fill find a generated file under <code>work/github/tutorial/tutorial-tests.factor</code>. Notice the line</p>
+
+<pre><code>USING: tools.test github.tutorial ;
+</code></pre>
+
+<p>that imports the unit testing module as well as your own. We will only test the public <code>prime?</code> function.</p>
+
+<p>Tests are written using the <code>unit-test</code> word, which expects two quotations: the first one containing the expected outputs and the second one containing the words to run in order to get that output. Add these lines to <code>github.tutorial-tests</code>:</p>
+
+<pre><code>[ t ] [ 2 prime? ] unit-test
+[ t ] [ 13 prime? ] unit-test
+[ t ] [ 29 prime? ] unit-test
+[ f ] [ 15 prime? ] unit-test
+[ f ] [ 377 prime? ] unit-test
+[ f ] [ 1 prime? ] unit-test
+[ t ] [ 20750750228539 prime? ] unit-test
+</code></pre>
+
+<p>You can now run the tests with <code>github.tutorial</code> test. You will see that we have actually made a mistake, and pressing <code>F3</code> will show more details. It seems that our assertions fails for <code>2</code>.</p>
+
+<p>In fact, if you manually try to run our functions for <code>2</code>, you will see that our defition of <code>[2,b]</code> returns <code>{ 2 }</code> for <code>2 sqrt</code>, due to the fact that the square root of two is less than two, so we get a descending interval. Try making a fix so that the tests now pass.</p>
+
+<p>There are a few more words to test errors and inference of stack effects. <code>unit-test</code> suffices for now, but later on you may want to check <code>must-fail</code> and <code>must-infer</code>.</p>
+
+<p>We can also add some documentation to our vocabulary. Autogenerated documentation is always available for user-defined words (even in the listener), but we can write some useful comments manually, or even add custom articles that will appear in the online help. Predictably, we start with</p>
+
+<pre><code>"github.tutorial" scaffold-docs
+</code></pre>
+
+<p>The generated file <code>work/github/tutorial-docs.factor</code> import <code>help.markup</code> and <code>help.syntax</code>. These two vocabularies define words to generate documentation. The actual help page is generated by the <code>HELP:</code> parsing word.</p>
+
+<p>The arguments to <code>HELP:</code> are nested array of the form <code>{ $directive content... }</code>. In particular, you see here the directives <code>$values</code> and<code>$description</code>, but a few more exist, such as <code>$errors</code>, <code>$examples</code> and <code>$see-also</code>.</p>
+
+<p>Notice that the type of the output <code>?</code> has been inferred to be boolean. Change the first lines to look like</p>
+
+<pre><code>USING: help.markup help.syntax kernel math ;
+IN: github.tutorial
+
+HELP: prime?
+{ $values
+    { "n" fixnum }
+    { "?" boolean }
+}
+{ $description "Tests if n is prime. n is assumed to be a positive integer." } ;
+</code></pre>
+
+<p>and refresh the <code>github.tutorial</code> vocabulary. If you now look at the help for <code>prime?</code>, for instance with <code>\ prime? help</code>, you will see the updated documentation.</p>
+
+<p>You can also render the directives in the listener for quicker feedback. For instance, try writing</p>
+
+<pre><code>{ $values
+    { "n" integer }
+    { "?" boolean }
+} print-content
+</code></pre>
+
+<p>The help markup contains a lot of possible directives, and you can use them to write stand-alone articles in the help system. Have a look at some more with <code>"element-types" help</code>.</p>
+
+<h2>
+<a id="the-object-system-and-protocols" class="anchor" href="#the-object-system-and-protocols" aria-hidden="true"><span class="octicon octicon-link"></span></a>The object system and protocols</h2>
+
+<p>Although it is not apparent from what we have said so far, Factor has object-oriented features, and many core words are actually method invocations. To better understand how objects behave in Factor, a quote is in order:</p>
+
+<blockquote>
+<p>I invented the term Object-Oriented and I can tell you I did not have C++ in mind.</p>
+
+<p>Alan Kay</p>
+</blockquote>
+
+<p>The term object-oriented has as many different meanings as people using it. One point of view - which was actually central to the work of Alan Kay - is that it is about late binding of function names. In Smalltalk, the language where this concept was born, people do not talk about calling a method, but rather sending a message to an object. It is up to the object to decide how to respond to this message, and the caller should not know about the implementation. For instance, one can send the message <code>map</code> both to an array and a linked list, but internally the iteration will be handled differently.</p>
+
+<p>The binding of the message name to the method implementation is dynamic, and this is regarded as the core strenght of objects. As a result, fairly complex systems can evolve from the cooperation of independent objects who do not mess with each other internals.</p>
+
+<p>To be fair, Factor is very different from Smalltalk, but still there is the concept of classes, and generic words can defined having different implementations on different classes.</p>
+
+<p>Some classes are builtin in Factor, such as <code>string</code>, <code>boolean</code>, <code>fixnum</code> or <code>word</code>. Next, the most common way to define a class is as a <strong>tuple</strong>. Tuples are defined with the <code>TUPLE:</code> parsing word, followed by the tuple name and the fields of the class that we want to define, which are called <strong>slots</strong> in Factor parlance.</p>
+
+<p>Let us define a class for movies:</p>
+
+<pre><code>TUPLE: movie title director actors ;
+</code></pre>
+
+<p>This also generates setters <code>&gt;&gt;title</code>, <code>&gt;&gt;director</code> and <code>&gt;&gt;actors</code> and getters <code>title&gt;&gt;</code>, <code>director&gt;&gt;</code> and <code>actors&gt;&gt;</code>. For instance, we can create a new movie with</p>
+
+<pre><code>movie new "The prestige" &gt;&gt;title
+  "Christopher Nolan" &gt;&gt;director
+  { "Hugh Jackman" "Christian Bale" "Scarlett Johansson" } &gt;&gt;actors
+</code></pre>
+
+<p>We can also shorten this to</p>
+
+<pre><code>"The prestige" "Christopher Nolan"
+{ "Hugh Jackman" "Christian Bale" "Scarlett Johansson" }
+movie boa
+</code></pre>
+
+<p>The word <code>boa</code> stands for 'by-order-of-arguments' and is a constructor that fills the slots of the tuple with the items on the stack in order. <code>movie boa</code> is called a <strong>boa constructor</strong>, a pun on the Boa Constrictor. It is customary to define a most common constructor called <code>&lt;movie&gt;</code>, which in our case could be simply</p>
+
+<pre><code>: &lt;movie&gt; ( title director actors -- movie ) movie boa ;
+</code></pre>
+
+<p>In other cases, you may want to use some defaults, or compute some fields.</p>
+
+<p>The functional minded will be worried about the mutability of tuples. Actually, slots can be declared to be read-only with <code>{ slot-name read-only }</code>. In this case, the field setter will not be generated, and the value must be set a the beginning with a boa constructor. Other valid slot modifiers are <code>initial:</code> - to declare a default value - and a class word, such as <code>integer</code>, to restrict the values that can be inserted.</p>
+
+<p>As an example, we define another tuple class for rock bands</p>
+
+<pre><code>TUPLE: band { keyboards string read-only } { guitar string read-only }
+  { bass string read-only } { drums string read-only } ;
+: &lt;band&gt; ( keyboards guitar bass drums -- band ) band boa ;
+</code></pre>
+
+<p>together with one instance</p>
+
+<pre><code>"Richard Wright" "David Gilmour" "Roger Waters" "Nick Mason" &lt;band&gt;
+</code></pre>
+
+<p>Now, of course everyone knows that the star in a movie is the first actor, while in a rock band it is the bass player. To encode this, we first define a <strong>generic word</strong></p>
+
+<pre><code>GENERIC: star ( item -- star )
+</code></pre>
+
+<p>As you can see, it is declared with the parsing word <code>GENERIC:</code> and declares its stack effects but it has no implementation right now, hence no need for the closing <code>;</code>. Generic words are used to perform dynamic dispatch. We can define implementations for various classes using the word <code>M:</code></p>
+
+<pre><code>M: movie star actors&gt;&gt; first ;
+M: band star bass&gt;&gt; ;
+</code></pre>
+
+<p>If you write <code>star .</code> two times, you can see the different effect of calling a generic word on instances of different classes.</p>
+
+<p>Builtin and tuple classes are not all that there is to the object system: more classes can be defined with set operations like <code>UNION:</code> and <code>INTERSECTION:</code>. Another way to define a class is as a <strong>mixin</strong>.</p>
+
+<p>Mixins are defined with the <code>MIXIN:</code> word, and existing classes can be added to the mixin writing</p>
+
+<pre><code>INSTANCE: class mixin
+</code></pre>
+
+<p>Methods defined on the mixin will then be available on all classes that belong to the mixin. If you are familiar with Haskell typeclasses, you will recognize a resemblance, although Haskell enforces at compile time that instance of typeclasses implent certain functions, while in Factor this is informally specified in documentation.</p>
+
+<p>Two important examples of mixins are <code>sequence</code> and <code>assoc</code>. The former defines a protocol that is available to all concrete sequences, such as strings, linked lists or arrays, while the latter defines a protocol for associative arrays, such as hashtables or association lists.</p>
+
+<p>This enables all sequences in Factor to be acted upon with a common set of words, while differing in implementation and minimizing code repetition (because only few primitives are needed, and other operations are defined for the <code>sequence</code> class). The most common operations you will use on sequences are <code>map</code>, <code>filter</code> and <code>reduce</code>, but there are many more - as you can see with <code>"sequences" help</code>.</p>
+
+<h2>
+<a id="learning-the-tools" class="anchor" href="#learning-the-tools" aria-hidden="true"><span class="octicon octicon-link"></span></a>Learning the tools</h2>
+
+<p>A big part of the productivity of Factor comes from the deep integration of the language and libraries with the tools around them, which are embodied in the listener. Many functions of the listener can be used programmatically, and viceversa. You have seen some examples of this:</p>
+
+<ul>
+<li>the help is navigable online, but you can also invoke it with <code>help</code> and print help items with <code>print-content</code>;</li>
+<li>the <code>F2</code> shortcut or the words <code>refresh</code> and <code>refresh-all</code> can be used to refresh vocabularies from disk while continuing working in the listener;</li>
+<li>the <code>edit</code> word gives you editor integration, but you can also click on file names in the help pages for vocabularies to open them.</li>
+</ul>
+
+<p>The refresh is actually quite smart. Whenever a word is redefined, words that depend on it are recompiled against the new defition. You can check by yourself doing</p>
+
+<pre><code>: inc ( x -- y ) 1 + ;
+: inc-print ( x -- ) inc . ;
+5 inc-print
+</code></pre>
+
+<p>and then</p>
+
+<pre><code>: inc ( x -- y ) 2 + ;
+5 inc-print
+</code></pre>
+
+<p>This allows you to always keep a listener open, improving your definitions, periodically saving your definitions to file and refreshing, without ever having to reload Factor.</p>
+
+<p>You can also save the whole state of Factor with the word <code>save-image</code> and later restore it by starting Factor with</p>
+
+<pre><code>./factor -i=path-to-image
+</code></pre>
+
+<p>In fact, Factor is image-based and only uses files when loading and refreshing vocabularies.</p>
+
+<p>The power of the listener does not end here. Elements of the stack can be inspected by clicking on them, or by calling the word <code>inspector</code>. For instance try writing</p>
+
+<pre><code>TUPLE: trilogy first second third ;
+: &lt;trilogy&gt; ( first second third -- trilogy ) trilogy boa ;
+"A new hope" "The Empire strikes back" "Return of the Jedi" &lt;trilogy&gt;
+"George Lucas" 2array
+</code></pre>
+
+<p>You will get an item that looks like</p>
+
+<pre><code>{ ~trilogy~ "George Lucas" }
+</code></pre>
+
+<p>on the stack. Try clicking on it: you will be able to see the slots of the array and focus on the trilogy or on the string by double-clicking on them. This is extremely useful for interactive prototyping. Special objects can customize the inspector by implementing the <code>content-gadget</code> method.</p>
+
+<p>There is another inspector for errors. Whenever an error arises, it can be inspected with <code>F3</code>. This allows you to investigate exceptions, bad stack effects declarations and so on. The debugger allows you to step into code, both forwards and backwards, and you should take a moment to get some familiarity with it. You can also trigger the debugger manually, by entering some code in the listener and pressing <code>Ctrl+w</code>.</p>
+
+<p>Another feature of the listener allows you to benchmark code. As an example, we write an intentionally inefficient Fibonacci:</p>
+
+<pre><code>DEFER: fib-rec
+: fib ( n -- f(n) ) dup 2 &lt; [ ] [ fib-rec ] if ;
+: fib-rec ( n -- f(n) ) [ 1 - fib ] [ 2 - fib ] bi + ;
+</code></pre>
+
+<p>(notice the use of <code>DEFER:</code> to define two mutually recursive words). You can benchmark the running time writing <code>40 fib</code> and then pressing Ctrl+t instead of Enter. You will get timing information, as well as other statistics. Programmatically, you can use the <code>time</code> word on a quotation to do the same.</p>
+
+<p>You can also add watches on words, to print inputs and outputs on entry and exit. Try writing</p>
+
+<pre><code>\ fib watch
+</code></pre>
+
+<p>and then run <code>10 fib</code> to see what happens. You can then remove the watch with <code>\ fib reset</code>.</p>
+
+<p>Another very useful tool is the <code>lint</code> vocabulary. This scans word definitions to find duplicated code that can be factored out. As an example, let us define a word to check if a string starts with another one. Create a test vocabulary</p>
+
+<pre><code>"lintme" scaffold-work
+</code></pre>
+
+<p>and add the following definition</p>
+
+<pre><code>USING: kernel sequences ;
+IN: lintme
+
+: startswith? ( str sub -- ? ) dup length swapd head = ;
+</code></pre>
+
+<p>Load the lint tool with <code>USE: lint</code> and write <code>"lintme" lint-vocab</code>. You will get a report mentioning that the word sequence <code>length swapd</code> is already used in the word <code>(split)</code> of <code>splitting.private</code>, hence it could be factored out.</p>
+
+<p>Now, you would not certainly want to modify the source of a word in the standard library - let alone a private one - but in more complex cases the lint tool is able to find actual repetitions. It is a good idea to lint your vocabularies from time to time, to avoid code duplication and as a good way to discover library words that you may have accidentally redefined.</p>
+
+<p>Finally, there are a few utilities to inspect words. You can see the definition of a word in the help tool, but a quicker way can be <code>see</code>. Or, viceversa, you may use <code>usage.</code> to inspect the callers of a given word. Try <code>\ reverse see</code> and <code>\ reverse usage.</code>.</p>
+
+<h2>
+<a id="metaprogramming" class="anchor" href="#metaprogramming" aria-hidden="true"><span class="octicon octicon-link"></span></a>Metaprogramming</h2>
+
+<p>We now venture into the metaprogramming world, and write our first parsing word. By now, you have seen a lot of parsing words, such as <code>[</code>. <code>{</code>, <code>H{</code>, <code>USE:</code>, <code>IN:</code>, <code>&lt;PRIVATE</code>, <code>GENERIC:</code> and so on. Each of those is defined with the parsing word <code>SYNTAX:</code> and interacts with Factor's parser.</p>
+
+<p>The parser accumulates tokens onto an accumulator vector, unless it finds a parsing word, which is executed immediately. Since parsing words execute at compile time, they cannot interact with the stack, but they have access to the accumulator vector. Their stack effect must be <code>( accum -- accum )</code>. Usually what they do is ask the parser for some more tokens, do something with them, and finally push a result on the accumulator vector with the word <code>suffix!</code>.</p>
+
+<p>As an example, we will define a literal for DNA sequences. A DNA sequence is a sequence of one of the bases cytosine, guanine, adenine and thymine, which we will denote by the letters c, g, a, t. Since there are four possible bases, we can encode each with two bits. Let use define a word</p>
+
+<pre><code>: dna&gt;bits ( token -- bits ) {
+  { "a" [ { f f } ] }
+  { "c" [ { t t } ] }
+  { "g" [ { f t } ] }
+  { "t" [ { t f } ] }
+} case ;
+</code></pre>
+
+<p>where the first bit represents whether the basis is a purine or a pyrimidine, and the second one identifies bases that pair together.</p>
+
+<p>Our aim is to read a sequence of letters a, c, g, t - possibly with spaces - and convert them to a bit array. Factor supports bit arrays, and literal bit arrays look like <code>?{ f f t }</code>.</p>
+
+<p>Our syntax for DNA will start with <code>DNA{</code> and get all tokens until the closing token <code>}</code> is found. The intermediate tokens will be put into a string, and using our function <code>dna&gt;bits</code> we will map this string into a bit array. To read tokens, we will use the word <code>parse-tokens</code>. There are a few higher-level words to interact with the parser, such as <code>parse-until</code> and <code>parse-literal</code>, but we cannot apply them in our case, since the tokens we will find are just sequences of a c g t, instead of valid Factor words. Let us start with a simple approximation that just reads tokens between our delimiters and outputs the string obtained by concatenation</p>
+
+<pre><code>SYNTAX: DNA{ "}" parse-tokens concat suffix!
+</code></pre>
+
+<p>You can test the effect by doing <code>DNA{ a ccg t a g }</code>, which should output <code>"accgtag"</code>. As a second approximation, we transform each letter into a boolean pair:</p>
+
+<pre><code>SYNTAX: DNA{ "}" parse-tokens concat
+  [ 1string dna&gt;bits ] { } map-as suffix! ;
+</code></pre>
+
+<p>Notice the use of <code>map-as</code> instead of <code>map</code>. Since the target collection is not a string, we did not use <code>map</code>, which preserves the type, but <code>map-as</code>, which take as an additional argument an examplar of the target collection - here <code>{ }</code>.  Our final version flattens the array of pairs with <code>concat</code> and finally makes into a bit array:</p>
+
+<pre><code>SYNTAX: DNA{ "}" parse-tokens concat
+  [ 1string dna&gt;bits ] { } map-as
+  concat &gt;bit-array suffix! ;
+</code></pre>
+
+<p>If you try it with <code>DNA{ a ccg t a g }</code> you should get</p>
+
+<pre><code>`?{ f f t t t t f t t f f f f t }`
+</code></pre>
+
+<p>We only scratched the surface of parsing words by defining a simple literal. In general, they allow you to perform arbitrary computations at compile time, enabling powerful forms of metaprogramming.</p>
+
+<p>In a sense, Factor syntax is completely flat, and parsing words allow you to introduce syntaxes more complex than a stream of tokens to be used locally. This permits to increase the Factor language by adding many new features as libraries. In principle, it would even be possible to have an external language compile to Factor - say JavaScript - and embed it as a Factor DSL inside the boundaries of a <code>&lt;JS ... JS&gt;</code> parsing word. Some taste is needed not to abuse too much of this to introduce styles that are much too alien in the concatenative world.</p>
+
+<h2>
+<a id="when-the-stack-is-not-enough" class="anchor" href="#when-the-stack-is-not-enough" aria-hidden="true"><span class="octicon octicon-link"></span></a>When the stack is not enough</h2>
+
+<p>Until now I have cheated a bit, and tried to avoid writing examples that would have been too complex to write in concatenative style. Truth is, you <em>will</em> find occasions where this is too restrictive. Fortunately, parsing words allow you to break these restrictions, and Factor comes with a few to handle the most common annoyances.</p>
+
+<p>One thing you may want to do is to actually name local variables. The <code>::</code> word works like <code>:</code>, but allows you to actually bind the name of stack parameters to variables, so that you can use them multiple times, in the order you want. For instance, let us define a word to solve quadratic equations. I will spare you the purely stack-based version, and present you a version with locals (this will require the <code>locals</code> vocabulary):</p>
+
+<pre><code>:: solveq ( a b c -- x )
+  b neg
+  b b * 4 a c * * - sqrt
+  +
+  2 a * / ;
+</code></pre>
+
+<p>In this case we have chosen the + sign, but we can do better and output both solutions:</p>
+
+<pre><code>:: solveq ( a b c -- x1 x2 )
+  b neg
+  b b * 4 a c * * - sqrt
+  [ + ] [ - ] 2bi
+  [ 2 a * / ] bi@ ;
+</code></pre>
+
+<p>You can check that this definition works with something like <code>2 -16 30 solveq</code>, which should output both <code>3.0</code> and <code>5.0</code>. Apart from being written in RPN style, our first version of <code>solveq</code> looks exactly the same it would in a language with local variables. For the second definition, we apply both the <code>+</code> and <code>-</code> operations to -b and delta, using the combinator <code>2bi</code>, and then divide both results by 2a using <code>bi@</code>.</p>
+
+<p>There is also support for locals in quotations - using <code>[|</code> - and methods - using <code>M::</code> - and one can also create a scope where to bind local variables outside definitions using <code>[let</code>. Of course, all of these are actually compiled to concatenative code with some stack shuffling. I encourage you to browse examples for these words, but bear in mind that their usage in practice is actually much less prominent than one would expect - about 1% of Factor's own codebase.</p>
+
+<p>Another more common case happens when you need to specialize a quotation to some values, but these do not appear in the right place. Remember that you can partially apply a quotation using <code>curry</code>. But this assumes that the value you are applying should appear leftmost in the quotation; in the other cases you need some stack shuffling.</p>
+
+<p>The <code>fry</code> vocabulary defines <strong>fried quotations</strong>; these are quotations that have holes in them - marked by <code>_</code> - that are filled with values from the stack. For instance, let me take again the example with <code>prime?</code>, but this time write it without using helper words:</p>
+
+<pre><code>: prime? ( n -- ? ) [ sqrt 2 swap [a,b] ] [ [ swap divisor? ] curry ] bi any? not ;
+</code></pre>
+
+<p>The first quotation is rewritten more simply as</p>
+
+<pre><code>[ '[ 2 _ sqrt [a,b] ] call ]
+</code></pre>
+
+<p>Here we use a fried quotation - starting with <code>'[</code> - to inject the element on the top of the stack in the second position, and then use <code>call</code> to evaluate the resulting quotation. The second quotation becomes simply</p>
+
+<pre><code>[ '[ _ swap divisor? ] ]
+</code></pre>
+
+<p>so an alternative defition of <code>prime?</code> is</p>
+
+<pre><code>: prime? ( n -- ? ) [ '[ 2 _ sqrt [a,b] ] call ] [ '[ _ swap divisor? ] ] bi any? not ;
+</code></pre>
+
+<p>Depending on you taste, you may find this version more readable. In this case, the added clarity is probably lost due to the fact that the fried quotations are themselves inside quotations, but occasionally their use can do a lot to simplify the flow.</p>
+
+<p>Finally, there are times where one just wants to give names to variables that are available inside some scope, and use them where necessary. These values can hold values that are global, or at least not local to a single word. A typical example could be the input and output streams, or database connections.</p>
+
+<p>Factor allows you to create <strong>dynamic variables</strong> and bind them in scopes. The first thing is to create a <strong>symbol</strong> for a variable, say</p>
+
+<pre><code>SYMBOL: favorite-language
+</code></pre>
+
+<p>Then one can use the word <code>set</code> to bind the variable and <code>get</code> to retrieve its values, like</p>
+
+<pre><code>"Factor" favorite-language set
+favorite-language get
+</code></pre>
+
+<p>Scopes are nested, and new scopes can be created with the word <code>with-scope</code>. Try for instance</p>
+
+<pre><code>: on-the-jvm ( -- ) [
+  "Scala" favorite-language set
+  favorite-language get .
+] with-scope ;
+</code></pre>
+
+<p>If you run <code>on-the-jvm</code> you will get <code>"Scala"</code> printed, but still after execution <code>favorite-language get</code> return <code>"Factor"</code>.</p>
+
+<p>All the tools we have seen in this section should be used when necessary, as they break concatenativity and makes words less easy to factor, but greatly increase clarity when needed. Factor has a very practical approach and does not shy from offering features that are less pure but nevertheless often useful.</p>
+
+<h2>
+<a id="inputoutput" class="anchor" href="#inputoutput" aria-hidden="true"><span class="octicon octicon-link"></span></a>Input/Output</h2>
+
+<p>We now leave the tour of the language, and start investigating how to interact with the outside world. I will begin in this section with some examples of input/output, but inevitably this will lead into a discussion of asynchrony. The rest of the tutorial will then go in more detail about parallel and distributed computing.</p>
+
+<p>Factor implements efficient asynchronous input/output facilities, similar to NIO on the JVM or the Node.js I/O system. This means that input and output operations are performed in the background, leaving the foreground task free to perform work while the disk is spinning or the network is buffering packets. Factor is currently single threaded, but asynchrony allows it to be rather performant for applications that are I/O-bound.</p>
+
+<p>All of Factor input/output words are centered on <strong>streams</strong>. Streams are lazy sequences which can be read or written to, typical examples being files, network ports or the standard input and output. Factor holds a couple of dynamic variables called <code>input-stream</code> and <code>output-stream</code>, which are used by most I/O words. These variables can be rebound locally using <code>with-input-stream</code>, <code>with-output-stream</code> and <code>with-streams</code>. When you are in the listener, the default streams write and read in the listener, but once you deploy your application as an executable, they are usually bound to the standard input and output of your console.</p>
+
+<p>The words <code>&lt;file-reader&gt;</code> and <code>&lt;file-writer&gt;</code> (or <code>&lt;file-appender&gt;</code>) can be used to create a read or write stream to a file, given its path and encoding. Putting everything together, we make a simple example of a word that reads each line of a file encoded in UTF8, and write the first letter of the line to the listener.</p>
+
+<p>First, we want a <code>safe-head</code> word, that works like <code>head</code>, but returns its input if the sequence is too short. To do so, we will use the word <code>recover</code>, which allows us to declare a try-catch block. It requires two quotations: the first one is executed, and on failure, the second one is executed with the error as input. Hence we can define</p>
+
+<pre><code>: safe-head ( seq n -- seq' ) [ head ] [ 2drop ] recover ;
+</code></pre>
+
+<p>With this definition, we can make a word to read the first character of the first line:</p>
+
+<pre><code>: read-first-letters ( path -- )
+  utf8 &lt;file-reader&gt; [
+    readln 1 safe-head write nl
+  ] with-input-stream ;
+</code></pre>
+
+<p>Using the helper word <code>with-file-reader</code>, we can also shorten this to</p>
+
+<pre><code>: read-first-letters ( path -- )
+  utf8 [
+    readln 1 safe-head write nl
+  ] with-file-reader ;
+</code></pre>
+
+<p>Unfortunately, we are limited to one line. To read more lines, we should chain calls to <code>readln</code> until one returns <code>f</code>. Factor helps us with the word <code>file-lines</code>, which lazily iterates over lines. Our final definition becomes</p>
+
+<pre><code>: read-first-letters ( path -- )
+  utf8 file-lines [ 1 safe-head write nl ] each ;
+</code></pre>
+
+<p>When the file is small, one can also use <code>file-contents</code> to read the whole contents of a file in a single string. Factor defines many more words for input/output, which cover many more cases, such as binary files or sockets.</p>
+
+<p>We end this section investigating some words to walk the filesystem. Our aim is a very minimal implementation of the <code>ls</code> command.</p>
+
+<p>The word <code>directory-entries</code> lists the contents of a directory, giving a list of tuple elements, each one having the slots <code>name</code> and <code>type</code>. You can see this by trying <code>"/home" directory-entries [ name&gt;&gt; ] map</code>. If you inspect the directory entries, you will see that the type is either <code>+directory+</code> or <code>+regular-file+</code> (well, there are symlinks as well, but we will ignore them for simplicity). Hence we can define a word that lists files and directories with</p>
+
+<pre><code>: list-files-and-dirs ( path -- files dirs )
+    directory-entries [ type&gt;&gt; +regular-file+ = ] partition ;
+</code></pre>
+
+<p>With this, we can define a word <code>ls</code> that will print directory contents as follows:</p>
+
+<pre><code>: ls ( path -- )
+  list-files-and-dirs
+  "DIRECTORIES:" write nl
+  "------------" write nl
+  [ name&gt;&gt; write nl ] each
+  "FILES:" write nl
+  "------" write nl
+  [ name&gt;&gt; write nl ] each ;
+</code></pre>
+
+<p>Try the word on your home directory to see the effects. In the next section, we shall look at how to create an executable for our simple program.</p>
+
+<h2>
+<a id="deploying-programs" class="anchor" href="#deploying-programs" aria-hidden="true"><span class="octicon octicon-link"></span></a>Deploying programs</h2>
+
+<p>There are two ways to run Factor programs outside the listener: as scripts, which are interpreted by Factor, or as standalone executable compiled for your platform. Both require to define a vocabulary with an entry point (altough there is an even simpler way for scripts), so let's do that first.</p>
+
+<p>Start by creating our <code>ls</code> vocabulary with <code>"ls" scaffold-work</code> and make it look like this:</p>
+
+<pre><code>! Copyright (C) 2014 Andrea Ferretti.
+! See http://factorcode.org/license.txt for BSD license.
+USING: accessors command-line io io.directories io.files.types
+  kernel namespaces sequences ;
+IN: ls
+
+&lt;PRIVATE
+
+: list-files-and-dirs ( path -- files dirs )
+    directory-entries [ type&gt;&gt; +regular-file+ = ] partition ;
+
+PRIVATE&gt;
+
+: ls ( path -- )
+  list-files-and-dirs
+  "DIRECTORIES:" write nl
+  "------------" write nl
+  [ name&gt;&gt; write nl ] each
+  "FILES:" write nl
+  "------" write nl
+  [ name&gt;&gt; write nl ] each ;
+</code></pre>
+
+<p>When we run our vocabulary, we will need to read arguments from the command line. Command-line arguments are stored under the <code>command-line</code> dynamic variable, which holds an array of strings. Hence - forgetting any error checking - we can define a word which runs <code>ls</code> on the first command-line argument with</p>
+
+<pre><code>: ls-run ( -- ) command-line get first ls ;
+</code></pre>
+
+<p>Finally, we use the word <code>MAIN:</code> to declare the main word of our vocabulary:</p>
+
+<pre><code>MAIN: ls-run
+</code></pre>
+
+<p>Having added those two lines to your vocabulary, you are now ready to run it. The simplest way is to run the vocabulary as a script with the <code>-run</code> flag passed to Factor. For instance to list the contents of my home I can do</p>
+
+<pre><code>./factor -run=ls /home/andrea
+</code></pre>
+
+<p>In order to produce an executable, we must set some options and call the <code>deploy</code> word. The simplest way to this graphically is to invoke the <code>deploy-tool</code> word. If you write <code>"ls" deploy-tool</code>, you will be presented with a window to choose deployment options. For our simple case, we will leave the default options and choose Deploy.</p>
+
+<p>After a little while, you should be presented with an executable that you can run like</p>
+
+<pre><code>cd ls
+./ls /home/andrea
+</code></pre>
+
+<p>Try making the <code>ls</code> program more robust by handling missing command-line arguments and non-existent or non-directory arguments.</p>
+
+<h2>
+<a id="multithreading" class="anchor" href="#multithreading" aria-hidden="true"><span class="octicon octicon-link"></span></a>Multithreading</h2>
+
+<p>As we have said, the Factor runtime is single-threaded, like Node. Still, one can emulate concurrency in a single-threaded setting by making use of <strong>coroutines</strong>. This are essentially cooperative threads, which periodically release control with the <code>yield</code> word, so that the scheduler can decide which coroutine run next.</p>
+
+<p>Although cooperative threads do not allow to make use of multiple cores, they still have some benefits:</p>
+
+<ul>
+<li>input/output operations can avoid to block the entire runtime, so that one can implement quite performant applications if I/O is the bottleneck;</li>
+<li>user interfaces are naturally a multithreaded construct, and they can be implemented in this model, as the listener itself shows;</li>
+<li>finally, some problems may just naturally be easier to write making use of multithreaded constructs.</li>
+</ul>
+
+<p>For the cases where one wants to make use of multiple cores, Factor offers the possibility of spawning other processes and communicating between them with the use of <strong>channels</strong>, as we will see in a later section.</p>
+
+<p>Threads in Factors are created out of a quotation and a name, with the <code>spawn</code> word. Let use use this to print the first few lines of Star Wars, one per second, each line being printed inside its own thread. First, let us write those lines inside a dynamic variable:</p>
+
+<pre><code>SYMBOL: star-wars
+
+"A long time ago, in a galaxy far, far away....
+
+It is a period of civil war. Rebel
+spaceships, striking from a hidden
+base, have won their first victory
+against the evil Galactic Empire.
+
+During the battle, rebel spies managed
+to steal secret plans to the Empire's
+ultimate weapon, the DEATH STAR, an
+armored space station with enough
+power to destroy an entire planet.
+
+Pursued by the Empire's sinister agents,
+Princess Leia races home aboard her
+starship, custodian of the stolen plans
+that can save her people and restore
+freedom to the galaxy...."
+"\n" split star-wars set
+</code></pre>
+
+<p>We will spawn 18 threads, each one printing a line. The operation that a thread must run amounts to</p>
+
+<pre><code>star-wars get ?nth print
+</code></pre>
+
+<p>Note that dynamic variables are shared between threads, so each one had access to star-wars. This is fine, since it is read-only, but the usual caveats about shared memory in a multithreaded settings apply.</p>
+
+<p>Let us define a word for the thread workload</p>
+
+<pre><code>: print-a-line ( i -- ) star-wars get ?nth print ;
+</code></pre>
+
+<p>If we give the i-th thread the name "i", our example amounts to</p>
+
+<pre><code>18 [0,b) [
+  [ [ print-a-line ] curry ]
+  [ number&gt;string ]
+  bi spawn
+] each
+</code></pre>
+
+<p>Note the use of <code>curry</code> to send i to the quotation that prints the i-th line. This is almost what we want, but it runs too fast. We need to put the thread in sleep for a while. So we <code>clear</code> the stack that now contains a lot of thread objects and look for a <code>sleep</code> word in the help.</p>
+
+<p>It turns out that <code>sleep</code> does exactly what we need, but it takes a <strong>duration</strong> object as input. We can create a duration of i seconds with... well <code>i seconds</code>. So we define</p>
+
+<pre><code>: wait-and-print ( i -- ) dup seconds sleep print-a-line ;
+</code></pre>
+
+<p>Let us try</p>
+
+<pre><code>18 [0,b) [
+  [ [ wait-and-print ] curry ]
+  [ number&gt;string ]
+  bi spawn
+] each
+</code></pre>
+
+<p>Instead of <code>spawn</code> we can also use <code>in-thread</code> which uses a dummy thread name and discards the returned thread, simplifying the above to</p>
+
+<pre><code>18 [0,b) [
+  [ wait-and-print ] curry in-thread
+] each
+</code></pre>
+
+<p>This is good enough for our simple purpose. In serious applications, theads will be long running. In order to make them cooperate, one can use the <code>yield</code> word to signal that the thread has done a unit of work, and other threads can gain control. You also may want to have a look at other words to <code>stop</code>, <code>suspend</code> or <code>resume</code> threads.</p>
+
+<h2>
+<a id="servers-and-furnace" class="anchor" href="#servers-and-furnace" aria-hidden="true"><span class="octicon octicon-link"></span></a>Servers and Furnace</h2>
+
+<p>A very common case for using more than one thread is when writing server applications. When writing network applications, it is common to start a thread for each incoming connection (remember that this are green threads, so they are much more lightweight than OS threads).</p>
+
+<p>To simplify this, Factor has the word <code>spawn-server</code>, which works like <code>spawn</code>, but in addition repeatedly spawns the quotation until it returns <code>f</code>. This is still a very low-level word: in reality one has to do much more: listen for TCP connections on a given port, handle connection limits and so on.</p>
+
+<p>The vocabulary <code>io.servers</code> allows to write and configure TCP servers. A server is created with the word <code>&lt;threaded-server&gt;</code>, which requires an encoding as a parameter. Its slots can the be set to configure logging, connection limits, ports and so on. The most important slot to fill is <code>handler</code>, which contains a quotation that is executed for each incoming connection. You can see a very simple example of server with</p>
+
+<pre><code>"resource:extra/time-server/time-server.factor" edit-file
+</code></pre>
+
+<p>We will raise the level of abstraction even more and show how to run a simple HTTP server. First, <code>USE: http.server</code>.</p>
+
+<p>An HTTP application is built out of a <strong>responder</strong>. A responder is essentially a function from a path and an HTTP request to an HTTP response, but more concretely is anything that implements the method <code>call-responder*</code>. Responses are instances of the tuple <code>response</code>, so are usually generated calling <code>&lt;response&gt;</code> and customizing a few slots. Let us write a simple echo responder:</p>
+
+<pre><code>TUPLE: echo-responder ;
+
+: &lt;echo-responder&gt; ( -- responder ) echo-responder new ;
+
+M: echo-responder call-responder*
+  drop
+  &lt;response&gt;
+    200 &gt;&gt;code
+    "Document follows" &gt;&gt;message
+    "text/plain" &gt;&gt;content-type
+    swap concat &gt;&gt;body ;
+</code></pre>
+
+<p>Responders are usually combined to form more complex responders, in order to implement routing and other features. In our simplistic example, we will use just this one responder, and set it globally with</p>
+
+<pre><code>&lt;echo-responder&gt; main-responder set-global
+</code></pre>
+
+<p>Once you have done this, you can start the server with <code>8080 httpd</code>- You can then visit <code>http://localhost:8080/hello/%20/from/%20/factor</code> in your browser to see your first responder in action. You can then stop the server with <code>stop-server</code>.</p>
+
+<p>Now, if this was all that Factor offers to write web applications, it would still be rather low level. In reality, web applications are usually written using a web framework called <strong>Furnace</strong>.</p>
+
+<p>Furnace allows us -among other thing - to write more complex actions using a template language. Actually, there are two template languages shipped by default, and we will use <strong>Chloe</strong>. Furnace allows us to use create <strong>page actions</strong> from Chloe templates, and in order to create a responder we will need to add routing.</p>
+
+<p>Let use first investigate a simple example of routing. To do this, we create a special type of responder called a <strong>dispatcher</strong>, that dispatches requests based on path parameters. Let us create a simple dispatcher that will choose between our echo responder and a default responder used to serve static files.</p>
+
+<pre><code>dispatcher new-dispatcher
+  &lt;echo-responder&gt; "echo" add-responder
+  "/home/andrea" &lt;static&gt; "home" add-responder
+  main-responder set-global
+</code></pre>
+
+<p>Of course, substitute the path <code>/home/andrea</code> with any folder you like. If you start again the server with <code>8080 httpd</code>, you should be able to see both our simple echo responder (under <code>/echo</code>) and the contents of your files (under <code>/home</code>). Notice that directory listing is disabled by default, you can only access the content of files.</p>
+
+<p>Now that you know how to do routing, we can write page actions in Chloe. Things are starting to become complicated, so we scaffold a vocabulary with <code>"hello-furnace" scaffold-work</code>. Make it look like this:</p>
+
+<pre><code>! Copyright (C) 2014 Andrea Ferretti.
+! See http://factorcode.org/license.txt for BSD license.
+USING: accessors furnace.actions http http.server
+  http.server.dispatchers http.server.static kernel sequences ;
+IN: hello-furnace
+
+
+TUPLE: echo-responder ;
+
+: &lt;echo-responder&gt; ( -- responder ) echo-responder new ;
+
+M: echo-responder call-responder*
+  drop
+  &lt;response&gt;
+    200 &gt;&gt;code
+    "Document follows" &gt;&gt;message
+    "text/plain" &gt;&gt;content-type
+    swap concat &gt;&gt;body ;
+
+TUPLE: hello-dispatcher &lt; dispatcher ;
+
+: &lt;example-responder&gt; ( -- responder )
+  hello-dispatcher new-dispatcher
+    &lt;echo-responder&gt; "echo" add-responder
+    "/home/andrea" &lt;static&gt; "home" add-responder
+    &lt;page-action&gt;
+      { hello-dispatcher "greetings" } &gt;&gt;template
+    "chloe" add-responder ;
+</code></pre>
+
+<p>Most things are the same we have done in the listener. The only difference is that we have added a third responder in our dispatcher, under <code>chloe</code>. This responder is created with a page action. The page action has many slots - say to declare the behaviour of receiving the result of a form - but we only set its template. THis is a pair with the dispatcher class and the relative path of the template file.</p>
+
+<p>In order for all this to work, create a file <code>work/hello-furnace/greetings.xml</code> with a content like</p>
+
+<pre><code>&lt;?xml version='1.0' ?&gt;
+
+&lt;t:chloe xmlns:t="http://factorcode.org/chloe/1.0"&gt;
+  &lt;p&gt;Hello from Chloe&lt;/p&gt;
+&lt;/t:chloe&gt;
+</code></pre>
+
+<p>Reload the <code>hello-furnace</code> vocabulary and <code>&lt;example-responder&gt; main-responder set-global</code>. You should be able to see the results of your efforts under <code>http://localhost:8080/chloe</code>. Notice that there was no need to restart the server, but we can change the main responder dynamically.</p>
+
+<p>This ends our very brief tour of Furnace. It actually does much more than this: form validation and handling, authentication, logging and more. But this section is already getting too long, and you will have to find out more in the documentation.</p>
+
+<h2>
+<a id="processes-and-channels" class="anchor" href="#processes-and-channels" aria-hidden="true"><span class="octicon octicon-link"></span></a>Processes and channels</h2>
+
+<p>As I said, Factor is single-threaded from the point of view of the OS. If we want to make use of multiple cores, we need a way to spawn Factor processes and communicate between them. Factor implements two different models of message-passing concurrency: the actor model, which is based on the idea of sending messages asynchronously between threads, and the CSP model, based on the use of <strong>channels</strong>.</p>
+
+<p>As a warm-up, we will make a simple example of communication between threads in the same process.</p>
+
+<pre><code>FROM: concurrency.messaging =&gt; send receive ;
+</code></pre>
+
+<p>We can start a thread that will receive a message and print it repeatedly:</p>
+
+<pre><code>: print-repeatedly ( -- ) receive . print-repeatedly ;
+[ print-repeatedly ] "printer" spawn
+</code></pre>
+
+<p>A thread whose quotation starts with <code>receive</code> and calls itself recursively behaves like an actor in Erlang or Akka. We can then use <code>send</code> to send messages to it. Try <code>"hello" over send</code> and then <code>"threading" over send</code>.</p>
+
+<p>Channels are a slightly different abstractions, used for instance in Go and in Clojure core.async. They decouple the sender and the receiver, and are usually used synchronously. For instance, one side can receive from a channel before the some other party sends something to it. This just means that the receiving end yields control to the scheduler, which waits for the send of the message before giving control to the receiver again. This feature sometimes makes it easier to synchronize multithreaded applications.</p>
+
+<p>Again, we first use a channel to communicate between threads in the same process. As expected, <code>USE: channels</code>. You can create a channel with <code>&lt;channel&gt;</code>, write to it with <code>to</code> and read from it with <code>from</code>. Note that both operations are blocking: <code>to</code> will block until the value is read in a different thread, and <code>from</code> will block until a value is available.</p>
+
+<p>We create a channel and give it a name with</p>
+
+<pre><code>SYMBOL: ch
+&lt;channel&gt; ch set
+</code></pre>
+
+<p>Then we write on it in a separate thread, in order not to block the UI</p>
+
+<pre><code>[ "hello" ch get to ] in-thread
+</code></pre>
+
+<p>We can then read the value in the UI with</p>
+
+<pre><code>ch get from
+</code></pre>
+
+<p>We can also invert the order:</p>
+
+<pre><code>[ ch get from . ] in-thread
+"hello" ch get to
+</code></pre>
+
+<p>This works fine, since we had set the reader first.</p>
+
+<p>Now, for the interesting part: we will start a second Factor instance and communicate via message sending. Factor transparently supports sending messages over the network, serializing values with the <code>serialize</code> vocabulary.</p>
+
+<p>Start another instance of Factor, and run a node server on it. We will use the word <code>&lt;inet4&gt;</code>, that creates an IPv4 address from a host and a port, and the <code>&lt;node-server&gt;</code> constructor</p>
+
+<pre><code>USE: concurrency.distributed
+f 9000 &lt;inet4&gt; &lt;node-server&gt; start-server
+</code></pre>
+
+<p>Here we have used <code>f</code> as host, which just stands for localhost. We will also start a thread that keeps a running count of the numbers it has received.</p>
+
+<pre><code>FROM: concurrency.messaging =&gt; send receive ;
+: add ( x -- y ) receive + dup . add ;
+[ 0 add ] "adder" spawn
+</code></pre>
+
+<p>Once we have started the server, we can make a thread available with <code>register-remote-thread</code>:</p>
+
+<pre><code>dup name&gt;&gt; register-remote-thread
+</code></pre>
+
+<p>Now we switch to the other instance of Factor. Here we will receive a reference to the remote thread and start sending numbers to it. The address of a thread is just the address of its server and the name we have registered the thread with, so we obtain a reference to our adder thread with</p>
+
+<pre><code>f 9000 &lt;inet4&gt; "adder" &lt;remote-thread&gt;
+</code></pre>
+
+<p>Now, we reimport <code>send</code> just to be sure (there is an overlap with a word having the same name in <code>io.sockets</code>, that we have imported)</p>
+
+<pre><code>FROM: concurrency.messaging =&gt; send receive ;
+</code></pre>
+
+<p>and we can start sending numbers to it. Try <code>3 over send</code>, and then <code>8 over send</code> - you should see the running total printed in the other Factor instance.</p>
+
+<p>What about channels? We go back to our server, and start a channel there, just as above. This time, though, we <code>publish</code> it to make it available remotely:</p>
+
+<pre><code>USING: channels channels.remote ;
+&lt;channel&gt; dup publish
+</code></pre>
+
+<p>What you get in return is an id you can use remotely to communicate. For instance, I just got <code>72581372615274718877979307388951222312843084896785643440879198703359628058956</code> (yes, they really want to be sure it is unique!).</p>
+
+<p>We will wait on this channel, thereby blocking the UI:</p>
+
+<pre><code>swap from .
+</code></pre>
+
+<p>In the other Factor instance we use the id to get a reference to the remote channel and write to it</p>
+
+<pre><code>f 9000 &lt;inet4&gt; 72581372615274718877979307388951222312843084896785643440879198703359628058956 &lt;remote-channel&gt;
+"Hello, channels" over to
+</code></pre>
+
+<p>In the server instance, the message should be printed.</p>
+
+<p>Remote channels and threads are both useful to implement distributed applications and make good use of multicore servers. Of course, it remains the question how to start worker nodes in the first place. Here we have done it manually - if the set of nodes is fixed, this is actually an option.</p>
+
+<p>Otherwise, one could use the <code>io.launcher</code> vocabulary to start other Factor instances programmatically.</p>
+
+<h2>
+<a id="where-to-go-from-here" class="anchor" href="#where-to-go-from-here" aria-hidden="true"><span class="octicon octicon-link"></span></a>Where to go from here?</h2>
+
+<p>We have covered a lot of ground, and I hope that by now you have a feeling whether Factor clicks for you. You can now work your way through the documentation, and hopefully contribute to Factor yourself.</p>
+
+<p>Let me end with a few tips:</p>
+
+<ul>
+<li>when starting to write Factor, it is <em>very</em> easy to deal a lot with stack shuffling. Learn the combinators well, and do not fear to throw away oyur first examples;</li>
+<li>no definition is too short: aim for one line;</li>
+<li>the help system and the inspector are your best friends.</li>
+</ul>
+
+<p>To be fair, we also have to mention some drawbacks of Factor:</p>
+
+<ul>
+<li>first, the community is really small. What they have done is impressive, but do not hope to find a lot of information on the internet;</li>
+<li>the concatenative model is very powerful, but also very hard to get right;</li>
+<li>Factor lacks threads: although the distributed processes make up for it, they incur some cost in serialization;</li>
+<li>finally, Factor does not currently have a package manager, and this probably hinders contribution.</li>
+</ul>
+
+<p>We have to balance the last observation with the convenience of having the whole source tree of Factor available in the image, which certainly makes it easier to learn about libraries. Let me suggest a few vocabularies that you may want to have a look at:</p>
+
+<ul>
+<li>first, I have not talked a lot about errors and exceptions. Learn more with <code>"errors" help</code>;</li>
+<li>the <code>macros</code> vocabulary implements a form of compile time metaprogramming less general than parsing words, but still quite convenient;</li>
+<li>the <code>models</code> vocabulary lets you implement a form of dataflow programming using objects with observable slots;</li>
+<li>the <code>match</code> vocabulary implements a form of pattern matching;</li>
+<li>the <code>monads</code> vocabulary implements Haskell style monads.</li>
+</ul>
+
+<p>I think these vocabulary are a testament to the power and expressivity of Factor. Happy hacking!</p>
+
+<pre><code>USE: images.http
+"http://factorcode.org/logo.png" http-image.
+</code></pre>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/andreaferretti/factor-tutorial/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/andreaferretti/factor-tutorial/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/andreaferretti/factor-tutorial"></a> is maintained by <a href="https://github.com/andreaferretti">andreaferretti</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
