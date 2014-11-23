@@ -121,11 +121,11 @@ Our definitions have become simpler and there was no need to pass parameters, re
 Parsing words
 -------------
 
-If you have paid attention until now, you will realized that I have lied to you. I have said that each word acts on the stack in order, but there a few words like `[`, `]`, `:` and `;` that certainly seems not to abide to this rule.
+If you have paid attention until now, you will realized that I have lied to you. I have said that each word acts on the stack in order, but there a few words like `[`, `]`, `:` and `;` that certainly seem not to abide to this rule.
 
 In fact these are **parsing words** and behave differently from simpler words like `5`, `[1,b]` or `drop`. We will get into more detail when we talk about metaprogramming, but for now it is enough to know that parsing words are special.
 
-They are not defined using `:`, but using `SYNTAX:` instead. When a parsing words is encountered, it can interact with the parser using a well-defined API to influence how successive words are parsed. For instance `:` asks the next tokens from the parsers until `;` is found and tried to compile that stream of tokens into a word definition.
+They are not defined using `:`, but using `SYNTAX:` instead. When a parsing words is encountered, it can interact with the parser using a well-defined API to influence how successive words are parsed. For instance `:` asks the next tokens from the parsers until `;` is found and tries to compile that stream of tokens into a word definition.
 
 A common use of parsing words is to define literals. For instance, `{` is a parsing word that starts an array definition and is terminated by `}`. Everything in-between is part of the array. An example of array that we have seen before is `{ 1 2 3 4 5 6 7 8 9 10 }`.
 
