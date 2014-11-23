@@ -98,7 +98,7 @@
 <pre><code>5 7 3 1 + - * .
 </code></pre>
 
-<p>which shows the peculiar way of doing arithmetics by putting the arguments first and the operator last - a convention which is called Reverse Polish Notation (RPN). Notice that this requires no parenthesis, unlike the Lisp convention where the operator comes first, and no precedence rules, unlike most other systems. For instance in any Lisp, the same computation would be written like</p>
+<p>which shows the peculiar way of doing arithmetics by putting the arguments first and the operator last - a convention which is called <a href="https://en.wikipedia.org/wiki/Reverse_Polish_notation">Reverse Polish Notation</a> (RPN). Notice that this requires no parenthesis, unlike the Lisp convention where the operator comes first, and no precedence rules, unlike most other systems. For instance in any Lisp, the same computation would be written like</p>
 
 <pre><code>(* 5 (- 7 (+ 3 1)))
 </code></pre>
@@ -163,11 +163,11 @@
 <h2>
 <a id="parsing-words" class="anchor" href="#parsing-words" aria-hidden="true"><span class="octicon octicon-link"></span></a>Parsing words</h2>
 
-<p>If you have paid attention until now, you will realized that I have lied to you. I have said that each word acts on the stack in order, but there a few words like <code>[</code>, <code>]</code>, <code>:</code> and <code>;</code> that certainly seems not to abide to this rule.</p>
+<p>If you have paid attention until now, you will realized that I have lied to you. I have said that each word acts on the stack in order, but there a few words like <code>[</code>, <code>]</code>, <code>:</code> and <code>;</code> that certainly seem not to abide to this rule.</p>
 
 <p>In fact these are <strong>parsing words</strong> and behave differently from simpler words like <code>5</code>, <code>[1,b]</code> or <code>drop</code>. We will get into more detail when we talk about metaprogramming, but for now it is enough to know that parsing words are special.</p>
 
-<p>They are not defined using <code>:</code>, but using <code>SYNTAX:</code> instead. When a parsing words is encountered, it can interact with the parser using a well-defined API to influence how successive words are parsed. For instance <code>:</code> asks the next tokens from the parsers until <code>;</code> is found and tried to compile that stream of tokens into a word definition.</p>
+<p>They are not defined using <code>:</code>, but using <code>SYNTAX:</code> instead. When a parsing words is encountered, it can interact with the parser using a well-defined API to influence how successive words are parsed. For instance <code>:</code> asks the next tokens from the parsers until <code>;</code> is found and tries to compile that stream of tokens into a word definition.</p>
 
 <p>A common use of parsing words is to define literals. For instance, <code>{</code> is a parsing word that starts an array definition and is terminated by <code>}</code>. Everything in-between is part of the array. An example of array that we have seen before is <code>{ 1 2 3 4 5 6 7 8 9 10 }</code>.</p>
 
@@ -1078,8 +1078,8 @@ f 9000 &lt;inet4&gt; &lt;node-server&gt; start-server
 <p>Let me end with a few tips:</p>
 
 <ul>
-<li>when starting to write Factor, it is <em>very</em> easy to deal a lot with stack shuffling. Learn the combinators well, and do not fear to throw away oyur first examples;</li>
-<li>no definition is too short: aim for one line;</li>
+<li>when starting to write Factor, it is <em>very</em> easy to deal a lot with stack shuffling. Learn the <a href="http://docs.factorcode.org/content/article-combinators.html">combinators</a> well, and do not fear to throw away your first examples;</li>
+<li>no definition is too short:  aim for one line;</li>
 <li>the help system and the inspector are your best friends.</li>
 </ul>
 
