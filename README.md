@@ -596,6 +596,10 @@ First, we want a `safe-head` word, that works like `head`, but returns its input
 
     : safe-head ( seq n -- seq' ) [ head ] [ 2drop ] recover ;
 
+This is mostly an occasion to show an example of exceptions, as Factor defines the `short` word, which takes a sequence and a number, and returns the minimum between the length of the sequence and the number. This allows us to write simply
+
+    : safe-head ( seq n -- seq' ) short head ;
+
 With this definition, we can make a word to read the first character of the first line:
 
     : read-first-letters ( path -- )
