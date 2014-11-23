@@ -31,21 +31,21 @@
           <h1>
 <a id="a-long-factor-tutorial" class="anchor" href="#a-long-factor-tutorial" aria-hidden="true"><span class="octicon octicon-link"></span></a>A long Factor tutorial</h1>
 
-<p>Factor is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concepts like folding, higher-order functions or currying.</p>
+<p><a href="http://factorcode.org">Factor</a> is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concepts like folding, higher-order functions, or currying.</p>
 
-<p>Even if Factor is a rather niche language, it is mature and features a comprehensive standard library covering tasks from JSON serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dinamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O - much like node, but with a much simpler model for cooperative multithreading.</p>
+<p>Even if Factor is a rather niche language, it is mature and features a comprehensive standard library covering tasks from JSON serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dynamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O - much like node, but with a much simpler model for cooperative multithreading.</p>
 
 <p>You may wonder why should you care enough to read this long tutorial. Factor has a few significant advantages over other languages, most arising from the fact that it has essentially no syntax:</p>
 
 <ul>
 <li>refactoring is very easy, leading to short and meaningful definitions;</li>
-<li>it is extremely succint, letting the programmer concentrate on what has to be done instead of boilerplate;</li>
+<li>it is extremely succinct, letting the programmer concentrate on what has to be done instead of boilerplate;</li>
 <li>it has powerful metaprogramming capabilities, exceeding those of LISPs;</li>
 <li>it is ideal to embed DSLs;</li>
 <li>it integrates easily with powerful tools.</li>
 </ul>
 
-<p>In this tutorial, we assume that you have downloaded a copy of Factor and that you are following along with the examples in the listener (the Factor REPL). The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.</p>
+<p>In this tutorial, we assume that you have <a href="http://factorcode.org">downloaded a copy of Factor</a> and that you are following along with the examples in the listener (the Factor REPL). The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.</p>
 
 <p>I will also assume that you are using some distribution of Linux, but everything should work the same on other systems, provided you adjust the paths in the examples.</p>
 
@@ -58,9 +58,9 @@
 
 <p>This requires some explanation, since functions will usually have multiple inputs and outputs, and it is not always the case that the output of <code>f</code> matches the input of <code>g</code>. For instance, <code>g</code> may need access to values computed by earlier functions. But the only thing that <code>g</code> can see is the output of <code>f</code>, so this is the whole state of the world, as far as <code>g</code> is concerned. Hence, to make this work, functions have to thread the global state, passing it to each other.</p>
 
-<p>There are various ways this global state can be encoded. The most naive would use a hashmap mapping variable names to their values. This turns out to be too flexible: if every function can access randomly any piece of global state, there is little control on what functions can do, little encapsulation and ultimately programs become an unstructured mess of routines mutating global variables.</p>
+<p>There are various ways this global state can be encoded. The most naive would use a hashmap that maps variable names to their values. This turns out to be too flexible:  if every function can access randomly any piece of global state, there is little control on what functions can do, little encapsulation, and ultimately programs become an unstructured mess of routines mutating global variables.</p>
 
-<p>It works well in practice to represent the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (for instance <code>swap</code>, that exchanges the two elements on top), then it becomes possible to refer to values more down the stack, but the farthest the position, the hardest it becomes to refer to it.</p>
+<p>It works well in practice to represent the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (e.g., <code>swap</code>, that exchanges the two elements on top), then it becomes possible to refer to values more down the stack, but the farthest the position, the hardest it becomes to refer to it.</p>
 
 <p>So, functions are encouraged to stay small and only refer to the top two or three elements. In a sense, there is no more a distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.</p>
 
