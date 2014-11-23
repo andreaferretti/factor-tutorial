@@ -62,7 +62,7 @@ If we write everything on one line, our program so far looks like
 
     5 7 3 1 + - * .
 
-which shows the peculiar way of doing arithmetics by putting the arguments first and the operator last - a convention which is called Reverse Polish Notation (RPN). Notice that this requires no parenthesis, unlike the Lisp convention where the operator comes first, and no precedence rules, unlike most other systems. For instance in any Lisp, the same computation would be written like
+which shows the peculiar way of doing arithmetics by putting the arguments first and the operator last - a convention which is called [Reverse Polish Notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation) (RPN). Notice that this requires no parenthesis, unlike the Lisp convention where the operator comes first, and no precedence rules, unlike most other systems. For instance in any Lisp, the same computation would be written like
 
     (* 5 (- 7 (+ 3 1)))
 
@@ -942,8 +942,8 @@ We have covered a lot of ground, and I hope that by now you have a feeling wheth
 
 Let me end with a few tips:
 
-- when starting to write Factor, it is *very* easy to deal a lot with stack shuffling. Learn the combinators well, and do not fear to throw away oyur first examples;
-- no definition is too short: aim for one line;
+- when starting to write Factor, it is *very* easy to deal a lot with stack shuffling. Learn the [combinators](http://docs.factorcode.org/content/article-combinators.html) well, and do not fear to throw away your first examples;
+- no definition is too short:  aim for one line;
 - the help system and the inspector are your best friends.
 
 To be fair, we also have to mention some drawbacks of Factor:
