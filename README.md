@@ -560,7 +560,7 @@ so an alternative defition of `prime?` is
 
 Depending on you taste, you may find this version more readable. In this case, the added clarity is probably lost due to the fact that the fried quotations are themselves inside quotations, but occasionally their use can do a lot to simplify the flow.
 
-Finally, there are times where one just wants to give names to variables that are available inside some scope, and use them where necessary. These values can hold values that are global, or at least not local to a single word. A typical example could be the input and output streams, or database connections.
+Finally, there are times where one just wants to give names to variables that are available inside some scope, and use them where necessary. These variables can hold values that are global, or at least not local to a single word. A typical example could be the input and output streams, or database connections.
 
 Factor allows you to create **dynamic variables** and bind them in scopes. The first thing is to create a **symbol** for a variable, say
 
@@ -580,7 +580,7 @@ Scopes are nested, and new scopes can be created with the word `with-scope`. Try
 
 If you run `on-the-jvm` you will get `"Scala"` printed, but still after execution `favorite-language get` return `"Factor"`.
 
-All the tools we have seen in this section should be used when necessary, as they break concatenativity and makes words less easy to factor, but greatly increase clarity when needed. Factor has a very practical approach and does not shy from offering features that are less pure but nevertheless often useful.
+All the tools that we have seen in this section should be used when necessary, as they break concatenativity and make words less easy to factor, but they can greatly increase clarity when needed. Factor has a very practical approach and does not shy from offering features that are less pure but nevertheless often useful.
 
 
 Input/Output
@@ -761,7 +761,7 @@ Let us try
       bi spawn
     ] each
 
-Instead of `spawn` we can also use `in-thread` which uses a dummy thread name and discards the returned thread, simplifying the above to
+Instead of `spawn`, we can also use `in-thread` which uses a dummy thread name and discards the returned thread, simplifying the above to
 
     18 [0,b) [
       [ wait-and-print ] curry in-thread
