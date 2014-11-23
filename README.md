@@ -95,7 +95,7 @@ If we had written just `*`, Factor would have tried to apply multiplication to t
 
 Let us `drop` the result to empty the stack, and try writing what we have done so far in a single shot: `10 [1,b] 1 [ * ] reduce`. This will output `3628800` as expected.
 
-We now want to define a word that can be called whenever we want. We will call our word `!` as it is customary. To define it, we need to use the word `:`. Then we put the name of the word being defined, the **stack effects** and finally the body, ending with the `;` word:
+We now want to define a word that can be called whenever we want. We will call our word `!` as it is customary (although `!` is the word used for comments, and our definition is going to shadow it, so you might prefer to use `fact` instead). To define it, we need to use the word `:`. Then we put the name of the word being defined, the **stack effects** and finally the body, ending with the `;` word:
 
     : ! ( n -- n! ) [1,b] 1 [ * ] reduce ;
 
@@ -117,6 +117,8 @@ Notice that the `1 [ * ] reduce` part of the definition sort of makes sense on i
     : ! ( n -- n! ) [1,b] prod ;
 
 Our definitions have become simpler and there was no need to pass parameters, rename local variables or anything that would have been necessary to factor out a part of the definition in a different language.
+
+Of course, Factor already has a word for the factorial (actually there is a whole `math.factorials` vocabulary, including many variants of the usual factorial) and for the product (`product` in the `sequences` vocabulary), but as it often happens introductory examples overlap with the standard library.
 
 Parsing words
 -------------
@@ -350,14 +352,21 @@ The word `boa` stands for 'by-order-of-arguments' and is a constructor that fill
 
     : <movie> ( title director actors -- movie ) movie boa ;
 
+In fact, boa constructor are some common, that the above line can be shortened to
+
+    C: <movie> movie
+
 In other cases, you may want to use some defaults, or compute some fields.
 
 The functional minded will be worried about the mutability of tuples. Actually, slots can be declared to be read-only with `{ slot-name read-only }`. In this case, the field setter will not be generated, and the value must be set a the beginning with a boa constructor. Other valid slot modifiers are `initial:` - to declare a default value - and a class word, such as `integer`, to restrict the values that can be inserted.
 
 As an example, we define another tuple class for rock bands
 
-    TUPLE: band { keyboards string read-only } { guitar string read-only }
-      { bass string read-only } { drums string read-only } ;
+    TUPLE: band
+      { keyboards string read-only }
+      { guitar string read-only }
+      { bass string read-only }
+      { drums string read-only } ;
     : <band> ( keyboards guitar bass drums -- band ) band boa ;
 
 together with one instance
