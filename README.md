@@ -532,7 +532,9 @@ You can check that this definition works with something like `2 -16 30 solveq`, 
 
 There is also support for locals in quotations - using `[|` - and methods - using `M::` - and one can also create a scope where to bind local variables outside definitions using `[let`. Of course, all of these are actually compiled to concatenative code with some stack shuffling. I encourage you to browse examples for these words, but bear in mind that their usage in practice is actually much less prominent than one would expect - about 1% of Factor's own codebase.
 
-Another more common case happens when you need to specialize a quotation to some values, but these do not appear in the right place. Remember that you can partially apply a quotation using `curry`. But this assumes that the value you are applying should appear leftmost in the quotation; in the other cases you need some stack shuffling. The word `with` is a sort of partial application with a hole. It also curries a quotation, but uses the third element on the stack instead of the second. Also, the resulting curried quotation will be applied to an element inserting it in the second position. This is easier to explain with an example.
+Another more common case happens when you need to specialize a quotation to some values, but these do not appear in the right place. Remember that you can partially apply a quotation using `curry`. But this assumes that the value you are applying should appear leftmost in the quotation; in the other cases you need some stack shuffling. The word `with` is a sort of partial application with a hole. It also curries a quotation, but uses the third element on the stack instead of the second. Also, the resulting curried quotation will be applied to an element inserting it in the second position.
+
+The example from the documentation probably tells more than the above sentence: try writing `1 { 1 2 3 } [ / ] with map`.
 
 Let me take again `prime?`, but this time write it without using helper words:
 
