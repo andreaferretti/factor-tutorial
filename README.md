@@ -503,7 +503,15 @@ If you try it with `DNA{ a ccg t a g }` you should get
 
     `?{ f f t t t t f t t f f f f t }`
 
-We only scratched the surface of parsing words by defining a simple literal. In general, they allow you to perform arbitrary computations at compile time, enabling powerful forms of metaprogramming.
+Let us make another very simple example, stolen from [John Benediktsson](http://re-factor.blogspot.it/2014/06/swift-ranges.html), which is about infix syntax for ranges. Until now, we have used `[a,b]` to create a range. We can make a syntax that is friendlier to people coming from other languages using `...` as an infix word.
+
+We can use `scan-object` to ask the parser for the next parsed object, and `unclip-last` to get the top element from the accumulator vector. This way, we can define `...` simply with
+
+    SYNTAX: ... unclip-last scan-object [a,b] suffix! ;
+
+You can try it with `12 ... 18 >array`.
+
+We only scratched the surface of parsing words; in general, they allow you to perform arbitrary computations at compile time, enabling powerful forms of metaprogramming.
 
 In a sense, Factor syntax is completely flat, and parsing words allow you to introduce syntaxes more complex than a stream of tokens to be used locally. This permits to increase the Factor language by adding many new features as libraries. In principle, it would even be possible to have an external language compile to Factor - say JavaScript - and embed it as a Factor DSL inside the boundaries of a `<JS ... JS>` parsing word. Some taste is needed not to abuse too much of this to introduce styles that are much too alien in the concatenative world.
 
