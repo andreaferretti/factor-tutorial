@@ -589,7 +589,16 @@ IN: lintme
 <pre><code>`?{ f f t t t t f t t f f f f t }`
 </code></pre>
 
-<p>We only scratched the surface of parsing words by defining a simple literal. In general, they allow you to perform arbitrary computations at compile time, enabling powerful forms of metaprogramming.</p>
+<p>Let us make another very simple example, stolen from <a href="http://re-factor.blogspot.it/2014/06/swift-ranges.html">John Benediktsson</a>, which is about infix syntax for ranges. Until now, we have used <code>[a,b]</code> to create a range. We can make a syntax that is friendlier to people coming from other languages using <code>...</code> as an infix word.</p>
+
+<p>We can use <code>scan-object</code> to ask the parser for the next parsed object, and <code>unclip-last</code> to get the top element from the accumulator vector. This way, we can define <code>...</code> simply with</p>
+
+<pre><code>SYNTAX: ... unclip-last scan-object [a,b] suffix! ;
+</code></pre>
+
+<p>You can try it with <code>12 ... 18 &gt;array</code>.</p>
+
+<p>We only scratched the surface of parsing words; in general, they allow you to perform arbitrary computations at compile time, enabling powerful forms of metaprogramming.</p>
 
 <p>In a sense, Factor syntax is completely flat, and parsing words allow you to introduce syntaxes more complex than a stream of tokens to be used locally. This permits to increase the Factor language by adding many new features as libraries. In principle, it would even be possible to have an external language compile to Factor - say JavaScript - and embed it as a Factor DSL inside the boundaries of a <code>&lt;JS ... JS&gt;</code> parsing word. Some taste is needed not to abuse too much of this to introduce styles that are much too alien in the concatenative world.</p>
 
