@@ -1,7 +1,7 @@
 A panoramic tour of Factor
 ==========================
 
-[Factor](http://factorcode.org) is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concepts like folding, higher-order functions, or currying.
+[Factor](http://factorcode.org) is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concepts like [folding](http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29), [higher-order functions](http://en.wikipedia.org/wiki/Higher-order_function), or [currying](http://en.wikipedia.org/wiki/Currying).
 
 Even if Factor is a rather niche language, it is mature and features a comprehensive standard library covering tasks from JSON serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dynamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O - a bit like Node.js, but with a much simpler model for cooperative multithreading.
 
@@ -13,28 +13,28 @@ You may wonder why should you care enough to read this long tutorial. Factor has
 * it is ideal to embed DSLs;
 * it integrates easily with powerful tools.
 
-In this tutorial, we assume that you have [downloaded a copy of Factor](http://factorcode.org) and that you are following along with the examples in the listener (the Factor REPL). The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feets wet and return to it after some practice.
+In this tutorial, we assume that you have [downloaded a copy of Factor](http://factorcode.org) and that you are following along with the examples in the listener (the Factor REPL). The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feet wet and return to it after some practice.
 
 I will also assume that you are using some distribution of Linux, but everything should work the same on other systems, provided you adjust the paths in the examples.
 
 Concatenative languages
 -----------------------
 
-Factor is a *concatenative* programming language in the spirit of Forth. What does this even mean?
+Factor is a *concatenative* programming language in the spirit of [Forth](http://en.wikipedia.org/wiki/Forth_%28programming_language%29). What does this even mean?
 
-Imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it is usually implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (usually, functions are read from left to right, so this means first execute `f`, then `g`, unlike in mathematical notation).
+Imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it is usually implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (unlike in mathematical notation, functions are read from left to right, so this means first execute `f`, then `g`).
 
-This requires some explanation, since functions will usually have multiple inputs and outputs, and it is not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so this is the whole state of the world, as far as `g` is concerned. Hence, to make this work, functions have to thread the global state, passing it to each other.
+This requires some explanation, since functions often have multiple inputs and outputs, and it's not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so this is the whole state of the world as far as `g` is concerned. So, to make this work, functions have to thread the global state, passing it to each other.
 
 There are various ways this global state can be encoded. The most naive would use a hashmap that maps variable names to their values. This turns out to be too flexible:  if every function can access randomly any piece of global state, there is little control on what functions can do, little encapsulation, and ultimately programs become an unstructured mess of routines mutating global variables.
 
-It works well in practice to represent the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (e.g., `swap`, that exchanges the two elements on top), then it becomes possible to refer to values more down the stack, but the farthest the position, the hardest it becomes to refer to it.
+It works well in practice to represent the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (e.g., `swap`, that exchanges the two elements on top), then it becomes possible to refer to values down the stack, but the farther down the stack, the harder it becomes to refer to it.
 
-So, functions are encouraged to stay small and only refer to the top two or three elements. In a sense, there is no more a distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.
+So, functions are encouraged to stay small and only refer to the top two or three elements. In a sense, there is no distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.
 
-Notice that if every function takes the state of the whole world and returns the next state, its input is never used anymore. So, even if it is more convenient to think of pure functions from stacks to stacks, the semantics of the language can be implemented more efficiently by mutating a fixed stack.
+Notice that if every function takes the state of the whole world and returns the next state, its input is never used anymore. So, even though it's convenient to think of pure functions receiving a stack as input and outputting a stack, the semantics of the language can be implemented more efficiently by mutating a single stack.
 
-This leaves Factor in a strange position, whereby it is both extremely functional - only allowing to compose simpler functions into more complex ones - and largely imperative - describing operations on a mutable stack.
+This leaves concatenative languages like Factor in a strange position, they are both extremely functional - only allowing composition of simpler functions into more complex ones - and largely imperative - describing operations on a mutable stack.
 
 Playing with the stack
 ----------------------
@@ -56,26 +56,34 @@ You can enter more that one number, separated by spaces, like `7 3 1`, and get
     7
     4
 
-You can put, as before, more inputs in a single line, so for instance `- *` will leave the single number `15` on the stack (do you see why?). The function `.` (a dot) prints this item, while popping it out of the stack, leaving the stack empty.
+You can put additional inputs in a single line, so for instance `- *` will leave the single number `15` on the stack (do you see why?). 
+
+The function `.` (a period or a dot) prints the item at the top of the stack, while popping it out of the stack, leaving the stack empty.
 
 If we write everything on one line, our program so far looks like
 
     5 7 3 1 + - * .
 
-which shows the peculiar way of doing arithmetics by putting the arguments first and the operator last - a convention which is called [Reverse Polish Notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation) (RPN). Notice that this requires no parenthesis, unlike the Lisp convention where the operator comes first, and no precedence rules, unlike most other systems. For instance in any Lisp, the same computation would be written like
+which shows Factor's peculiar way of doing arithmetic by putting the arguments first and the operator last - a convention which is called [Reverse Polish Notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation) (RPN). Notice that RPN requires no parenthesis, unlike the [polish notation](http://en.wikipedia.org/wiki/Polish_notation) of Lisps where the operator comes first, and RPN requires no precedence rules, unlike the [infix notation](http://en.wikipedia.org/wiki/Infix_notation) used in most programming languages and in everyday arithmetic. For instance in any Lisp, the same computation would be written
 
     (* 5 (- 7 (+ 3 1)))
 
-Also notice that we have been able to split our computation rather arbitrarily and that each subpiece of our line made sense in itself.
+and in familiar infix notation
+
+    (7 - (3 + 1)) * 5
+
+Also notice that we have been able to split our computation onto many lines or combine it onto fewer lines rather arbitrarily, and that each line made sense in itself.
 
 Defining our first word
 -----------------------
 
-We will now define our first function. Factor has a slightly odd naming: since functions are just written from left to right, they are simply called **words**, and this is what we will do from now on. Modules in Factor define words in terms of previous words and are then called **vocabularies**.
+We will now define our first function. Factor has slightly odd naming of functions: since functions are read from left to right, they are simply called **words**, and this is what we'll call them from now on. Modules in Factor define words in terms of previous words and these sets of words are then called **vocabularies**.
 
-We will want to compute the factorial. To start with a concrete example, we compute the factorial of `10`, so we start by writing `10` on the stack. Now, the factorial is the product of the numbers from `1` to `10`, so we should produce such a list of numbers first.
+Suppose we want to compute the factorial. To start with a concrete example, we'll compute the factorial of `10`, so we start by writing `10` on the stack. Now, the factorial is the product of the numbers from `1` to `10`, so we should produce such a list of numbers first.
 
-The function to produce a range is reasonably called `[a,b]` (tokenization is trivial in Factor, as words are always space separated, and this allows you to use any combination of non-whitespace characters as an identifier). In our case one of the extremes is just `1`, so we can use the simpler word `[1,b]` instead. If you write that in the listener, you will be prompted with a choice, because the name `[1,b]` is not imported by default. Factor is able to suggest to import the `math.ranges` vocabulary, so choose that option and proceed.
+The word to produce a range is reasonably called `[a,b]` (tokenization is trivial in Factor because words are always space separated, so this allows you to use any combination of non-whitespace characters as the name of a word; there are no semantics to the `[`, the `,` and the `]` in `[a,b]` since it is just a token like `foo` or `bar`).
+
+The range we want starts with `1`, so we can use the simpler word `[1,b]` that only expects the top of the range to be on the stack. If you write `[1,b]` in the listener, you will be prompted with a choice, because the word `[1,b]` is not imported by default. Factor is able to suggest you import the `math.ranges` vocabulary, so choose that option and proceed.
 
 You should now have on your stack a rather opaque structure which looks like
 
@@ -85,36 +93,36 @@ This is because our range functions are lazy. To confirm that we actually have c
 
     { 1 2 3 4 5 6 7 8 9 10 }
 
-which is promising.
+which is promising!
 
 Next, we want to take the product of those numbers. In many languages, this could be done with a function called reduce or fold. Let us look for one. Pressing `F1` will open a contextual help, where you can search for `reduce`. It turns out that `reduce` is actually the word we are looking for, but at this point it may not be obvious how to use it.
 
-Try writing `1 [ * ] reduce` and look at the output: it is indeed the factorial of `10`. Now, `reduce` usually takes three arguments: a sequence (and we had one), a starting point (and this is the `1`) and a binary operation. This must certainly be the `*`, but what about those square brackets around it?
+Try writing `1 [ * ] reduce` and look at the output: it is indeed the factorial of `10`. Now, `reduce` usually takes three arguments: a sequence (and we had one on the stack), a starting point (this is the `1` we put on the stack next) and a binary operation. This must certainly be the `*`, but what about those square brackets around the `*`?
 
-If we had written just `*`, Factor would have tried to apply multiplication to the topmost two elements, which is not what we wanted. What we need is a way to mention a word without applying it. Keeping our textual metaphor, this mechanism is called **quotation**. To quote one or more words, you just surround them by `[` and `]` (leaving spaces). What you get is akin to an anonymous function in other languages.
+If we had written just `*`, Factor would have tried to apply multiplication to the topmost two elements, which is not what we wanted. What we need is a way to get a word onto the stack without applying it. Keeping our textual metaphor, this mechanism is called **quotation**. To quote one or more words, you just surround them by `[` and `]` (leaving spaces!). What you get is akin to an anonymous function in other languages.
 
-Let us `drop` the result to empty the stack, and try writing what we have done so far in a single shot: `10 [1,b] 1 [ * ] reduce`. This will output `3628800` as expected.
+Let's type the word `drop` into the listener to empty the stack, and try writing what we have done so far in a single line: `10 [1,b] 1 [ * ] reduce`. This will leave `3628800` on the stack as expected.
 
-We now want to define a word that can be called whenever we want. We will call our word `!` as it is customary (although `!` is the word used for comments, and our definition is going to shadow it, so you might prefer to use `fact` instead). To define it, we need to use the word `:`. Then we put the name of the word being defined, the **stack effects** and finally the body, ending with the `;` word:
+We now want to define a word for factorial that can be called whenever we want. We will call our word `fact` (although `!` is customarily used as the symbol for factorial, in Factor `!` is the word used for comments). To define it, we first need to use the word `:`. Then we put the name of the word being defined, then the **stack effects** and finally the body, ending with the `;` word:
 
-    : ! ( n -- n! ) [1,b] 1 [ * ] reduce ;
+    : fact ( n -- n! ) [1,b] 1 [ * ] reduce ;
 
 What are the stack effects? These are the part like `( n -- n! )` in our case. They have no effect on the function, but allow you to name your inputs and outputs for documenting purposes. You can use any identifier to name them, and Factor will only make a consistency check that the number of inputs and outputs agrees with what the body does.
 
 If you try to write
 
-    : ! ( m n -- n! ) [1,b] 1 [ * ] reduce ;
+    : fact ( m n -- n! ) [1,b] 1 [ * ] reduce ;
 
 Factor will signal an error that the number of inputs is not consistent. To restore the previous correct definition press `Ctrl+P` two times to get back to the previous input and then enter it.
 
 We can think at the stack effects in definitions both as a documenting tool and as a simple type system, which nevertheless does catch a few errors.
 
-In any case, you have succesfully defined your first word: if you write `10 !` in the listener you can prove it.
+In any case, you have succesfully defined your first word: if you write `10 fact` in the listener you can prove it.
 
 Notice that the `1 [ * ] reduce` part of the definition sort of makes sense on its own, being the product of a sequence. The nice thing about a concatenative language is that we can just factor this part out and write
 
     : prod ( {x1,...,xn} -- x1*...*xn ) 1 [ * ] reduce ;
-    : ! ( n -- n! ) [1,b] prod ;
+    : fact ( n -- n! ) [1,b] prod ;
 
 Our definitions have become simpler and there was no need to pass parameters, rename local variables or anything that would have been necessary to factor out a part of the definition in a different language.
 
@@ -393,7 +401,7 @@ This enables all sequences in Factor to be acted upon with a common set of words
 Learning the tools
 ------------------
 
-A big part of the productivity of Factor comes from the deep integration of the language and libraries with the tools around them, which are embodied in the listener. Many functions of the listener can be used programmatically, and viceversa. You have seen some examples of this:
+A big part of the productivity of Factor comes from the deep integration of the language and libraries with the tools around them, which are embodied in the listener. Many functions of the listener can be used programmatically, and vice versa. You have seen some examples of this:
 
 * the help is navigable online, but you can also invoke it with `help` and print help items with `print-content`;
 * the `F2` shortcut or the words `refresh` and `refresh-all` can be used to refresh vocabularies from disk while continuing working in the listener;
