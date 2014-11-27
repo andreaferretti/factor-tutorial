@@ -64,24 +64,24 @@ If we write everything on one line, our program so far looks like
 
     5 7 3 1 + - * .
 
-which shows Factor's peculiar way of doing arithmetic by putting the arguments first and the operator last - a convention which is called [Reverse Polish Notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation) (RPN). Notice that RPN requires no parenthesis, unlike the [polish notation](http://en.wikipedia.org/wiki/Polish_notation) of Lisps where the operator comes first, and RPN requires no precedence rules, unlike the [infix notation](http://en.wikipedia.org/wiki/Infix_notation) used in most programming languages and in everyday arithmetic. For instance in any Lisp, the same computation would be written like
+which shows Factor's peculiar way of doing arithmetic by putting the arguments first and the operator last - a convention which is called [Reverse Polish Notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation) (RPN). Notice that RPN requires no parenthesis, unlike the [polish notation](http://en.wikipedia.org/wiki/Polish_notation) of Lisps where the operator comes first, and RPN requires no precedence rules, unlike the [infix notation](http://en.wikipedia.org/wiki/Infix_notation) used in most programming languages and in everyday arithmetic. For instance in any Lisp, the same computation would be written
 
     (* 5 (- 7 (+ 3 1)))
 
-And in infix notation
+and in familiar infix notation
 
     (7 - (3 + 1)) * 5
 
-Also notice that we have been able to split or combine our computation rather arbitrarily, and that each line made sense in itself.
+Also notice that we have been able to split our computation onto many lines or combine it onto fewer lines rather arbitrarily, and that each line made sense in itself.
 
 Defining our first word
 -----------------------
 
-We will now define our first function. Factor has slightly odd naming of functions: since functions are written from left to right, they are simply called **words**, and this is what we'll call them from now on. Modules in Factor define words in terms of previous words and these sets of words are then called **vocabularies**.
+We will now define our first function. Factor has slightly odd naming of functions: since functions are read from left to right, they are simply called **words**, and this is what we'll call them from now on. Modules in Factor define words in terms of previous words and these sets of words are then called **vocabularies**.
 
 Suppose we want to compute the factorial. To start with a concrete example, we'll compute the factorial of `10`, so we start by writing `10` on the stack. Now, the factorial is the product of the numbers from `1` to `10`, so we should produce such a list of numbers first.
 
-The function to produce a range is reasonably called `[a,b]` (tokenization is trivial in Factor, as words are always space separated, and this allows you to use any combination of non-whitespace characters as an identifier). In our case one of the extremes is just `1`, so we can use the simpler word `[1,b]` instead. If you write that in the listener, you will be prompted with a choice, because the name `[1,b]` is not imported by default. Factor is able to suggest to import the `math.ranges` vocabulary, so choose that option and proceed.
+The word to produce a range is reasonably called `[a,b]` (tokenization is trivial in Factor, as words are always space separated, so this allows you to use any combination of non-whitespace characters as an identifier, there are no semantics to the `[`, the `,` and the `]` in `[a,b]` since it is just a token like 'foo' or 'bar'). In our case, since our range starts with `1`, we can use the simpler word `[1,b]` instead that only expects the top of the range to be on the stack. If you write `[1,b]` in the listener, you will be prompted with a choice, because the word `[1,b]` is not imported by default. Factor is able to suggest you import the `math.ranges` vocabulary, so choose that option and proceed.
 
 You should now have on your stack a rather opaque structure which looks like
 
@@ -91,7 +91,7 @@ This is because our range functions are lazy. To confirm that we actually have c
 
     { 1 2 3 4 5 6 7 8 9 10 }
 
-which is promising.
+which is promising!
 
 Next, we want to take the product of those numbers. In many languages, this could be done with a function called reduce or fold. Let us look for one. Pressing `F1` will open a contextual help, where you can search for `reduce`. It turns out that `reduce` is actually the word we are looking for, but at this point it may not be obvious how to use it.
 
