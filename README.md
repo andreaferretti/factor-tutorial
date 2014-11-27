@@ -101,9 +101,9 @@ Try writing `1 [ * ] reduce` and look at the output: it is indeed the factorial 
 
 If we had written just `*`, Factor would have tried to apply multiplication to the topmost two elements, which is not what we wanted. What we need is a way to get a word onto the stack without applying it. Keeping our textual metaphor, this mechanism is called **quotation**. To quote one or more words, you just surround them by `[` and `]` (leaving spaces!). What you get is akin to an anonymous function in other languages.
 
-Let us `drop` the result to empty the stack, and try writing what we have done so far in a single shot: `10 [1,b] 1 [ * ] reduce`. This will output `3628800` as expected.
+Let's type the word `drop` into the listener to empty the stack, and try writing what we have done so far in a single line: `10 [1,b] 1 [ * ] reduce`. This will leave `3628800` on the stack as expected.
 
-We now want to define a word that can be called whenever we want. We will call our word `!` as it is customary (although `!` is the word used for comments, and our definition is going to shadow it, so you might prefer to use `fact` instead). To define it, we need to use the word `:`. Then we put the name of the word being defined, the **stack effects** and finally the body, ending with the `;` word:
+We now want to define a word for factorial that can be called whenever we want. We will call our word `!` as it is customary (although `!` is the word used for comments, and our definition is going to shadow it, so you might prefer to use `fact` instead). To define it, we need to use the word `:`. Then we put the name of the word being defined, the **stack effects** and finally the body, ending with the `;` word:
 
     : ! ( n -- n! ) [1,b] 1 [ * ] reduce ;
 
