@@ -99,7 +99,7 @@ Next, we want to take the product of those numbers. In many languages, this coul
 
 Try writing `1 [ * ] reduce` and look at the output: it is indeed the factorial of `10`. Now, `reduce` usually takes three arguments: a sequence (and we had one on the stack), a starting point (this is the `1` we put on the stack next) and a binary operation. This must certainly be the `*`, but what about those square brackets around the `*`?
 
-If we had written just `*`, Factor would have tried to apply multiplication to the topmost two elements, which is not what we wanted. What we need is a way to mention a word without applying it. Keeping our textual metaphor, this mechanism is called **quotation**. To quote one or more words, you just surround them by `[` and `]` (leaving spaces). What you get is akin to an anonymous function in other languages.
+If we had written just `*`, Factor would have tried to apply multiplication to the topmost two elements, which is not what we wanted. What we need is a way to get a word onto the stack without applying it. Keeping our textual metaphor, this mechanism is called **quotation**. To quote one or more words, you just surround them by `[` and `]` (leaving spaces!). What you get is akin to an anonymous function in other languages.
 
 Let us `drop` the result to empty the stack, and try writing what we have done so far in a single shot: `10 [1,b] 1 [ * ] reduce`. This will output `3628800` as expected.
 
