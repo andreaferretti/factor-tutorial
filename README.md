@@ -22,9 +22,9 @@ Concatenative languages
 
 Factor is a *concatenative* programming language in the spirit of [Forth](http://en.wikipedia.org/wiki/Forth_%28programming_language%29). What does this even mean?
 
-Imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it is usually implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (unlike in mathematical notation, functions are usually read from left to right, so this means first execute `f`, then `g`).
+Imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it is usually implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (unlike in mathematical notation, functions are read from left to right, so this means first execute `f`, then `g`).
 
-This requires some explanation, since functions will usually have multiple inputs and outputs, and it is not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so this is the whole state of the world, as far as `g` is concerned. Hence, to make this work, functions have to thread the global state, passing it to each other.
+This requires some explanation, since functions often have multiple inputs and outputs, and it's not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so this is the whole state of the world as far as `g` is concerned. So, to make this work, functions have to thread the global state, passing it to each other.
 
 There are various ways this global state can be encoded. The most naive would use a hashmap that maps variable names to their values. This turns out to be too flexible:  if every function can access randomly any piece of global state, there is little control on what functions can do, little encapsulation, and ultimately programs become an unstructured mess of routines mutating global variables.
 
@@ -56,24 +56,30 @@ You can enter more that one number, separated by spaces, like `7 3 1`, and get
     7
     4
 
-You can put, as before, more inputs in a single line, so for instance `- *` will leave the single number `15` on the stack (do you see why?). The function `.` (a dot) prints this item, while popping it out of the stack, leaving the stack empty.
+You can put additional inputs in a single line, so for instance `- *` will leave the single number `15` on the stack (do you see why?). 
+
+The function `.` (a period or a dot) prints the item at the top of the stack, while popping it out of the stack, leaving the stack empty.
 
 If we write everything on one line, our program so far looks like
 
     5 7 3 1 + - * .
 
-which shows the peculiar way of doing arithmetics by putting the arguments first and the operator last - a convention which is called [Reverse Polish Notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation) (RPN). Notice that this requires no parenthesis, unlike the Lisp convention where the operator comes first, and no precedence rules, unlike most other systems. For instance in any Lisp, the same computation would be written like
+which shows Factor's peculiar way of doing arithmetic by putting the arguments first and the operator last - a convention which is called [Reverse Polish Notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation) (RPN). Notice that RPN requires no parenthesis, unlike the [polish notation](http://en.wikipedia.org/wiki/Polish_notation) of Lisps where the operator comes first, and RPN requires no precedence rules, unlike the [infix notation](http://en.wikipedia.org/wiki/Infix_notation) used in most programming languages and in everyday arithmetic. For instance in any Lisp, the same computation would be written like
 
     (* 5 (- 7 (+ 3 1)))
 
-Also notice that we have been able to split our computation rather arbitrarily and that each subpiece of our line made sense in itself.
+And in infix notation
+
+    (7 - (3 + 1)) * 5
+
+Also notice that we have been able to split or combine our computation rather arbitrarily, and that each line made sense in itself.
 
 Defining our first word
 -----------------------
 
-We will now define our first function. Factor has a slightly odd naming: since functions are just written from left to right, they are simply called **words**, and this is what we will do from now on. Modules in Factor define words in terms of previous words and are then called **vocabularies**.
+We will now define our first function. Factor has slightly odd naming of functions: since functions are written from left to right, they are simply called **words**, and this is what we'll call them from now on. Modules in Factor define words in terms of previous words and these sets of words are then called **vocabularies**.
 
-We will want to compute the factorial. To start with a concrete example, we compute the factorial of `10`, so we start by writing `10` on the stack. Now, the factorial is the product of the numbers from `1` to `10`, so we should produce such a list of numbers first.
+Suppose we want to compute the factorial. To start with a concrete example, we'll compute the factorial of `10`, so we start by writing `10` on the stack. Now, the factorial is the product of the numbers from `1` to `10`, so we should produce such a list of numbers first.
 
 The function to produce a range is reasonably called `[a,b]` (tokenization is trivial in Factor, as words are always space separated, and this allows you to use any combination of non-whitespace characters as an identifier). In our case one of the extremes is just `1`, so we can use the simpler word `[1,b]` instead. If you write that in the listener, you will be prompted with a choice, because the name `[1,b]` is not imported by default. Factor is able to suggest to import the `math.ranges` vocabulary, so choose that option and proceed.
 
