@@ -81,7 +81,9 @@ We will now define our first function. Factor has slightly odd naming of functio
 
 Suppose we want to compute the factorial. To start with a concrete example, we'll compute the factorial of `10`, so we start by writing `10` on the stack. Now, the factorial is the product of the numbers from `1` to `10`, so we should produce such a list of numbers first.
 
-The word to produce a range is reasonably called `[a,b]` (tokenization is trivial in Factor, as words are always space separated, so this allows you to use any combination of non-whitespace characters as an identifier, there are no semantics to the `[`, the `,` and the `]` in `[a,b]` since it is just a token like 'foo' or 'bar'). In our case, since our range starts with `1`, we can use the simpler word `[1,b]` instead that only expects the top of the range to be on the stack. If you write `[1,b]` in the listener, you will be prompted with a choice, because the word `[1,b]` is not imported by default. Factor is able to suggest you import the `math.ranges` vocabulary, so choose that option and proceed.
+The word to produce a range is reasonably called `[a,b]` (tokenization is trivial in Factor because words are always space separated, so this allows you to use any combination of non-whitespace characters as the name of a word; there are no semantics to the `[`, the `,` and the `]` in `[a,b]` since it is just a token like `foo` or `bar`).
+
+The range we want starts with `1`, so we can use the simpler word `[1,b]` that only expects the top of the range to be on the stack. If you write `[1,b]` in the listener, you will be prompted with a choice, because the word `[1,b]` is not imported by default. Factor is able to suggest you import the `math.ranges` vocabulary, so choose that option and proceed.
 
 You should now have on your stack a rather opaque structure which looks like
 
@@ -95,7 +97,7 @@ which is promising!
 
 Next, we want to take the product of those numbers. In many languages, this could be done with a function called reduce or fold. Let us look for one. Pressing `F1` will open a contextual help, where you can search for `reduce`. It turns out that `reduce` is actually the word we are looking for, but at this point it may not be obvious how to use it.
 
-Try writing `1 [ * ] reduce` and look at the output: it is indeed the factorial of `10`. Now, `reduce` usually takes three arguments: a sequence (and we had one), a starting point (and this is the `1`) and a binary operation. This must certainly be the `*`, but what about those square brackets around it?
+Try writing `1 [ * ] reduce` and look at the output: it is indeed the factorial of `10`. Now, `reduce` usually takes three arguments: a sequence (and we had one on the stack), a starting point (this is the `1` we put on the stack next) and a binary operation. This must certainly be the `*`, but what about those square brackets around the `*`?
 
 If we had written just `*`, Factor would have tried to apply multiplication to the topmost two elements, which is not what we wanted. What we need is a way to mention a word without applying it. Keeping our textual metaphor, this mechanism is called **quotation**. To quote one or more words, you just surround them by `[` and `]` (leaving spaces). What you get is akin to an anonymous function in other languages.
 
