@@ -401,7 +401,7 @@ This enables all sequences in Factor to be acted upon with a common set of words
 Learning the tools
 ------------------
 
-A big part of the productivity of Factor comes from the deep integration of the language and libraries with the tools around them, which are embodied in the listener. Many functions of the listener can be used programmatically, and viceversa. You have seen some examples of this:
+A big part of the productivity of Factor comes from the deep integration of the language and libraries with the tools around them, which are embodied in the listener. Many functions of the listener can be used programmatically, and vice versa. You have seen some examples of this:
 
 * the help is navigable online, but you can also invoke it with `help` and print help items with `print-content`;
 * the `F2` shortcut or the words `refresh` and `refresh-all` can be used to refresh vocabularies from disk while continuing working in the listener;
