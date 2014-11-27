@@ -103,26 +103,26 @@ If we had written just `*`, Factor would have tried to apply multiplication to t
 
 Let's type the word `drop` into the listener to empty the stack, and try writing what we have done so far in a single line: `10 [1,b] 1 [ * ] reduce`. This will leave `3628800` on the stack as expected.
 
-We now want to define a word for factorial that can be called whenever we want. We will call our word `!` as it is customary (although `!` is the word used for comments, and our definition is going to shadow it, so you might prefer to use `fact` instead). To define it, we need to use the word `:`. Then we put the name of the word being defined, the **stack effects** and finally the body, ending with the `;` word:
+We now want to define a word for factorial that can be called whenever we want. We will call our word `fact` (although `!` is customarily used as the symbol for factorial, in Factor `!` is the word used for comments). To define it, we first need to use the word `:`. Then we put the name of the word being defined, then the **stack effects** and finally the body, ending with the `;` word:
 
-    : ! ( n -- n! ) [1,b] 1 [ * ] reduce ;
+    : fact ( n -- n! ) [1,b] 1 [ * ] reduce ;
 
 What are the stack effects? These are the part like `( n -- n! )` in our case. They have no effect on the function, but allow you to name your inputs and outputs for documenting purposes. You can use any identifier to name them, and Factor will only make a consistency check that the number of inputs and outputs agrees with what the body does.
 
 If you try to write
 
-    : ! ( m n -- n! ) [1,b] 1 [ * ] reduce ;
+    : fact ( m n -- n! ) [1,b] 1 [ * ] reduce ;
 
 Factor will signal an error that the number of inputs is not consistent. To restore the previous correct definition press `Ctrl+P` two times to get back to the previous input and then enter it.
 
 We can think at the stack effects in definitions both as a documenting tool and as a simple type system, which nevertheless does catch a few errors.
 
-In any case, you have succesfully defined your first word: if you write `10 !` in the listener you can prove it.
+In any case, you have succesfully defined your first word: if you write `10 fact` in the listener you can prove it.
 
 Notice that the `1 [ * ] reduce` part of the definition sort of makes sense on its own, being the product of a sequence. The nice thing about a concatenative language is that we can just factor this part out and write
 
     : prod ( {x1,...,xn} -- x1*...*xn ) 1 [ * ] reduce ;
-    : ! ( n -- n! ) [1,b] prod ;
+    : fact ( n -- n! ) [1,b] prod ;
 
 Our definitions have become simpler and there was no need to pass parameters, rename local variables or anything that would have been necessary to factor out a part of the definition in a different language.
 
