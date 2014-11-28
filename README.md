@@ -166,7 +166,7 @@ Here is a list of the most common shuffling words together with their effect on 
 Combinators
 -----------
 
-Although the words mentioned in the previous paragraph are occasionally useful (especially the simpler `dup`, `drop` and `swap`), one should aim to write code that does as little stack shuffling as possible. This requires a certain practice in putting the function arguments in the right order from the start.
+Although the words mentioned in the previous paragraph are occasionally useful (especially the simpler `dup`, `drop` and `swap`), you should aim to write code that does as little stack shuffling as possible. This requires a certain practice in putting the function arguments in the right order from the start.
 
 Nevertheless, there are certain patterns of use that are better abstracted away into their own words. For instance, say we want to define a word to determine whether a given number `n` is prime. A simple algorithm would be to test each number from `2` to the square root of `n` and see whether it is a divisor of `n`.
 
