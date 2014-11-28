@@ -148,9 +148,9 @@ Other uses of parsing word include the module system, the object-oriented featur
 Stack shuffling
 ---------------
 
-Now that you know the basics of Factor, you may want to start assembling more complex words. This sometimes may require to use variables that are not on top of the stack, or to use variables more that once. There are a few words that can be used to this effect. I will mention them now, since you'd better be aware of them, but warn you that code using many of those words can quickly become hard to write and harder to read. It requires mentally simulating moving values on a stack, which is not a natural way to program. We will see a much more effective way to handle most needs in next section.
+Now that you know the basics of Factor, you may want to start assembling more complex words. This may sometimes require you to use variables that are not on top of the stack, or to use variables more that once. There are a few words that can be used to help with this. I mention them now since you need to be aware of them, but I warn you that using too many of these words to manipulate the stack will cause your code to quickly become harder to read and write. Stack shuffling requires mentally simulating moving values on a stack, which is not a natural way to program. In the next section we'll see a much more effective way to handle most needs.
 
-I will just write the most common shuffling words together with their effect on the stack. Feel free to try them in the listener, and explore the online help to find out more.
+Here is a list of the most common shuffling words together with their effect on the stack. Try them in the listener to get a feel for how they manipulate the stack, and explore the online help to find out more.
 
     dup ( x -- x x )
     drop ( x -- )
@@ -166,7 +166,7 @@ I will just write the most common shuffling words together with their effect on 
 Combinators
 -----------
 
-Although the words mentioned in the previous paragraph are occasionally useful (especially `dup`, `drop` and `swap`), one should aim to write code that does as little stack shuffling as possible. This requires a certain practice in putting the function arguments in the right order from the start.
+Although the words mentioned in the previous paragraph are occasionally useful (especially the simpler `dup`, `drop` and `swap`), one should aim to write code that does as little stack shuffling as possible. This requires a certain practice in putting the function arguments in the right order from the start.
 
 Nevertheless, there are certain patterns of use that are better abstracted away into their own words. For instance, say we want to define a word to determine whether a given number `n` is prime. A simple algorithm would be to test each number from `2` to the square root of `n` and see whether it is a divisor of `n`.
 
