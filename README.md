@@ -1,38 +1,40 @@
 A panoramic tour of Factor
 ==========================
 
-[Factor](http://factorcode.org) is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concepts like [folding](http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29), [higher-order functions](http://en.wikipedia.org/wiki/Higher-order_function), or [currying](http://en.wikipedia.org/wiki/Currying).
+[Factor](http://factorcode.org) is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be daunting since the concatenative paradigm is different from most mainstream languages. This tutorial will guide you through the basics of Factor so you can appreciate its simplicity and power. I assume you're familiar with a functional language, and I'll assume you understand concepts like [folding](http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29), [higher-order functions](http://en.wikipedia.org/wiki/Higher-order_function), and [currying](http://en.wikipedia.org/wiki/Currying).
 
-Even if Factor is a rather niche language, it is mature and features a comprehensive standard library covering tasks from JSON serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dynamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O - a bit like Node.js, but with a much simpler model for cooperative multithreading.
+Even though Factor is a niche language, it's mature and has a comprehensive standard library covering tasks from JSON serialization to socket programming and HTML templating. It runs in its own optimized VM with very high performance for a dynamically typed language. It also has a flexible object system, a [FFI](http://en.wikipedia.org/wiki/Foreign_function_interface) to C, and asynchronous I/O thats a bit like Node.js, but with a much simpler model for cooperative multithreading.
 
-You may wonder why should you care enough to read this long tutorial. Factor has a few significant advantages over other languages, most arising from the fact that it has essentially no syntax:
+You may wonder why you should care enough about Factor to read this tutorial. Factor has a few significant advantages over other languages, most arising from the fact that it has essentially no syntax:
 
-* refactoring is very easy, leading to short and meaningful definitions;
-* it is extremely succinct, letting the programmer concentrate on what has to be done instead of boilerplate;
-* it has powerful metaprogramming capabilities, exceeding those of LISPs;
-* it is ideal to embed DSLs;
+* refactoring is very easy, leading to short and meaningful function definitions;
+* it's extremely succinct, letting the programmer concentrate on what's important instead of boilerplate;
+* it has powerful metaprogramming capabilities, exceeding even those of LISPs;
+* it is ideal to create [DSLs](http://en.wikipedia.org/wiki/Domain-specific_language);
 * it integrates easily with powerful tools.
 
-In this tutorial, we assume that you have [downloaded a copy of Factor](http://factorcode.org) and that you are following along with the examples in the listener (the Factor REPL). The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feet wet and return to it after some practice.
+Before you start this tutorial, [downloaded a copy of Factor](http://factorcode.org) so you can follow along with the examples in the listener (the Factor [REPL](http://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop)).
 
-I will also assume that you are using some distribution of Linux, but everything should work the same on other systems, provided you adjust the paths in the examples.
+I assume you're using Mac OS X or some distribution of Linux, but everything should work the same on other systems, provided you adjust the file paths in the examples.
+
+The first section gives some motivation for cocatenative language's rather peculiar model of computation, but feel free to skip it if you want to get your feet wet and return to it after some hands on practice with Factor.
 
 Concatenative languages
 -----------------------
 
 Factor is a *concatenative* programming language in the spirit of [Forth](http://en.wikipedia.org/wiki/Forth_%28programming_language%29). What does this even mean?
 
-Imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it is usually implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (unlike in mathematical notation, functions are read from left to right, so this means first execute `f`, then `g`).
+To understand cocatenative programming, imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it's implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (unlike in mathematical notation, functions are read from left to right, so this means first execute `f`, then execute `g`).
 
-This requires some explanation, since functions often have multiple inputs and outputs, and it's not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so this is the whole state of the world as far as `g` is concerned. So, to make this work, functions have to thread the global state, passing it to each other.
+This requires some explanation, since we know functions often have multiple inputs and outputs, and it's not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so the output of `f` is the whole state of the world as far as `g` is concerned. To make this work, functions have to thread the global state, passing it to each other.
 
-There are various ways this global state can be encoded. The most naive would use a hashmap that maps variable names to their values. This turns out to be too flexible:  if every function can access randomly any piece of global state, there is little control on what functions can do, little encapsulation, and ultimately programs become an unstructured mess of routines mutating global variables.
+There are various ways this global state can be encoded. The most naive would use a hashmap that maps variable names to their values. This turns out to be too flexible: if every function can access any piece of global state, there is little control on what functions can do, little encapsulation, and ultimately programs become an unstructured mess of routines mutating global variables.
 
-It works well in practice to represent the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (e.g., `swap`, that exchanges the two elements on top), then it becomes possible to refer to values down the stack, but the farther down the stack, the harder it becomes to refer to it.
+It works well in practice to represent the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (e.g., `swap`, that exchanges the top two elements on the stack), then it becomes possible to refer to values down the stack, but the farther the value is down the stack, the harder it becomes to refer to it.
 
-So, functions are encouraged to stay small and only refer to the top two or three elements. In a sense, there is no distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.
+So, functions are encouraged to stay small and only refer to the top two or three elements on the stack. In a sense, there is no distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.
 
-Notice that if every function takes the state of the whole world and returns the next state, its input is never used anymore. So, even though it's convenient to think of pure functions receiving a stack as input and outputting a stack, the semantics of the language can be implemented more efficiently by mutating a single stack.
+Notice that if every function takes the state of the whole world and returns the next state, its input is never used anymore. So, even though it's convenient to think of pure functions as receiving a stack as input and outputting a stack, the semantics of the language can be implemented more efficiently by mutating a single stack.
 
 This leaves concatenative languages like Factor in a strange position, they are both extremely functional - only allowing composition of simpler functions into more complex ones - and largely imperative - describing operations on a mutable stack.
 
