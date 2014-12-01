@@ -166,38 +166,55 @@ Here is a list of the most common shuffling words together with their effect on 
 Combinators
 -----------
 
-Although the words mentioned in the previous paragraph are occasionally useful (especially the simpler `dup`, `drop` and `swap`), you should aim to write code that does as little stack shuffling as possible. This requires a certain practice in putting the function arguments in the right order from the start.
+Although the words mentioned in the previous paragraph are occasionally useful (especially the simpler `dup`, `drop` and `swap`), you should write code that does as little stack shuffling as possible. This requires practice getting the function arguments in the right order. Nevertheless, there are certain common patterns of needed stack manipulation that are better abstracted away into their own words.
 
-Nevertheless, there are certain patterns of use that are better abstracted away into their own words. For instance, say we want to define a word to determine whether a given number `n` is prime. A simple algorithm would be to test each number from `2` to the square root of `n` and see whether it is a divisor of `n`.
+Suppose we want to define a word to determine whether a given number `n` is prime. A simple algorithm is to test each number from `2` to the square root of `n` and see whether it is a divisor of `n`. In this case, `n` is used in two places: as an upper bound for the sequence, and as the number to test for divisibility.
 
-This immediately shows that `n` is used in two places: as an upper bound for the sequence, and as the number to test for divisibility. The word `bi` applies two different quotations to an element on the stack, and this is precisely what we need. For instance `5 [ 2 * ] [ 3 + ] bi` yields
+The word `bi` applies two different quotations to the single element on the stack above them, and this is precisely what we need. For instance `5 [ 2 * ] [ 3 + ] bi` yields
 
     10
     8
 
-To continue with our example, will need a word to test divisibility, and a quick search in the online help shows that `divisor?` is what we want. We will also need a way to make a range starting from `2`, which we can define like
+`bi` applies the quotation `[ 2 * ]` to the value `5` and then the quotation `[ 3 + ]` to the value `5` leaving us with `10` and then `8` on the stack. Without the `bi` word, we would have had to `dup` `5` and then `swap` the result of the multiplication to `5` so we could do the addition to `5`
+
+    5 dup 2 * swap 3 +
+
+You can see that `bi` replaces a common pattern of `dup`, then calculate, then `swap` and calculate again.
+
+To continue our prime example, we need a way to make a range starting from `2`. We can define our own word for this `[2,b]`, using the `[a,b]` range word we discussed earlier
 
     : [2,b] ( n -- {2,...,n} ) 2 swap [a,b] ; inline
 
-What's up with that `inline` word? This is one of the modifiers we can use after defining a word, another one being `recursive`. This will allow us to have the definition of the word inlined wherever it is used, rather than incurring a function call.
+What's up with that `inline` word? This is one of the modifiers we can use after defining a word, another one being `recursive`. This will allow us to have the definition of the word inlined wherever it is used, rather than incurring a function call. 
 
-It may also help to have the arguments for divisibility in the other direction, so we define
+We can try `[2,b]` and see that it works
+
+    6 [2,b] >array .
+
+Using our new `[2,b]` word, producing the range of numbers from `2` to the square root of `n` is easy: `sqrt floor [2,b]` (technically `floor` isn't necessary here, as `[a,b]` works for non-integer bounds). Let's try that out
+
+    16 sqrt [2,b] >array .
+
+Now, we need a word to test for divisibility. A quick search in the online help shows that `divisor?` is the word we want. It may also help to have the arguments for testing divisibility in the other direction, so we define `multiple?`
 
     : multiple? ( a b -- ? ) swap divisor? ; inline
 
-Now, producing the range of numbers from `2` to the square root of `n` is easy: `sqrt floor [2,b]` (`floor` is not even necessary, as `[a,b]` works for non-integer bounds). What about the second function?
+Both of these return `t`
 
-We must produce a function that test for being a divisor of `n` - in other words we need to partially apply the word `multiple?`. This can be done with the word `curry`, like this: `[ multiple? ] curry`.
+    9 3 divisor? .
+    3 9 multiple? .
 
-Finally, once we have the range and the test function on the stack, we can test whether any element satisfies the divisibility with `any?`. Our full definition looks like
+If we're going to use `bi` in our `prime` definition, as we implied above, we need a second quoted function. We need a function that tests for the values in the range being a divisor of `n` - in other words we need to partially apply the word `multiple?`. This can be done with the word `curry`, like this: `[ multiple? ] curry`.
+
+Finally, once we have the range and the test function on the stack, we can test whether any element satisfied divisibility with `any?` and then negate that answer with `not`. Our full definition of `prime` looks like
 
     : prime? ( n -- ? ) [ sqrt [2,b] ] [ [ multiple? ] curry ] bi any? not ;
 
-Altough the definition is slightly complicated, the stack shuffling is minimal and limited to the small helper functions, which are much simpler to reason about than `prime?`.
+Altough the definition of `prime` is complicated, the stack shuffling is minimal and is only used in the small helper functions, which are simpler to reason about than `prime?`.
 
-Notice that our `prime?` word uses two levels of quotation nesting. In general, Factor words tend to be rather shallow, using one level of nesting for each higher-order function, unlike Lisps or more generally languages based on the lambda calculus, which use one level of nesting for each function, higher-order or not.
+Notice that `prime?` uses two levels of quotation nesting since `bi` operates on two quotations, and our second quotation contains the word `curry`, which also operates on a quotation. In general, Factor words tend to be rather shallow, using one level of nesting for each higher-order function, unlike Lisps or more generally languages based on the lambda calculus, which use one level of nesting for each function, higher-order or not.
 
-Many more combinators exists other than `bi` (and its relative `tri`), and you should become acquainted at least with `bi*` and `bi@`.
+Many more combinators exists other than `bi` (and its relative `tri`), and you should become acquainted at least with `bi`, `tri`, `bi*` and `bi@` by reading about them in the online help and trying them out in the listener.
 
 Vocabularies
 ------------
