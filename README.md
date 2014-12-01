@@ -1,7 +1,7 @@
 A panoramic tour of Factor
 ==========================
 
-[Factor](http://factorcode.org) is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be daunting since the concatenative paradigm is different from most mainstream languages. This tutorial will guide you through the basics of Factor so you can appreciate its simplicity and power. I assume you're familiar with a functional language, and I'll assume you understand concepts like [folding](http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29), [higher-order functions](http://en.wikipedia.org/wiki/Higher-order_function), and [currying](http://en.wikipedia.org/wiki/Currying).
+[Factor](http://factorcode.org) is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be daunting since the concatenative paradigm is different from most mainstream languages. This tutorial will guide you through the basics of Factor so you can appreciate its simplicity and power. I assume you're an experienced programmer familiar with a functional language, and I'll assume you understand concepts like [folding](http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29), [higher-order functions](http://en.wikipedia.org/wiki/Higher-order_function), and [currying](http://en.wikipedia.org/wiki/Currying).
 
 Even though Factor is a niche language, it's mature and has a comprehensive standard library covering tasks from JSON serialization to socket programming and HTML templating. It runs in its own optimized VM with very high performance for a dynamically typed language. It also has a flexible object system, a [FFI](http://en.wikipedia.org/wiki/Foreign_function_interface) to C, and asynchronous I/O thats a bit like Node.js, but with a much simpler model for cooperative multithreading.
 
@@ -175,7 +175,7 @@ The word `bi` applies two different quotations to the single element on the stac
     10
     8
 
-`bi` applies the quotation `[ 2 * ]` to the value `5` and then the quotation `[ 3 + ]` to the value `5` leaving us with `10` and then `8` on the stack. Without the `bi` word, we would have had to `dup` `5` and then `swap` the result of the multiplication to `5` so we could do the addition to `5`
+`bi` applies the quotation `[ 2 * ]` to the value `5` and then the quotation `[ 3 + ]` to the value `5` leaving us with `10` and then `8` on the stack. Without `bi`, we would have to first `dup` `5`, then multiply, and then `swap` the result of the multiplication with the second `5`, so we could do the addition
 
     5 dup 2 * swap 3 +
 
@@ -185,17 +185,17 @@ To continue our prime example, we need a way to make a range starting from `2`. 
 
     : [2,b] ( n -- {2,...,n} ) 2 swap [a,b] ; inline
 
-What's up with that `inline` word? This is one of the modifiers we can use after defining a word, another one being `recursive`. This will allow us to have the definition of the word inlined wherever it is used, rather than incurring a function call. 
+What's up with that `inline` word? This is one of the modifiers we can use after defining a word, another one being `recursive`. This will allow us to have the definition of a short word inlined wherever it is used, rather than incurring a function call. 
 
-We can try `[2,b]` and see that it works
+Try our new `[2,b]` word and see that it works
 
     6 [2,b] >array .
 
-Using our new `[2,b]` word, producing the range of numbers from `2` to the square root of `n` is easy: `sqrt floor [2,b]` (technically `floor` isn't necessary here, as `[a,b]` works for non-integer bounds). Let's try that out
+Using `[2,b]`, producing the range of numbers from `2` to the square root of an `n` that's already on the stack is easy: `sqrt floor [2,b]` (technically `floor` isn't necessary here, as `[a,b]` works for non-integer bounds). Let's try that out
 
     16 sqrt [2,b] >array .
 
-Now, we need a word to test for divisibility. A quick search in the online help shows that `divisor?` is the word we want. It may also help to have the arguments for testing divisibility in the other direction, so we define `multiple?`
+Now, we need a word to test for divisibility. A quick search in the online help shows that `divisor?` is the word we want. It will help to have the arguments for testing divisibility in the other direction, so we define `multiple?`
 
     : multiple? ( a b -- ? ) swap divisor? ; inline
 
@@ -204,9 +204,9 @@ Both of these return `t`
     9 3 divisor? .
     3 9 multiple? .
 
-If we're going to use `bi` in our `prime` definition, as we implied above, we need a second quoted function. We need a function that tests for the values in the range being a divisor of `n` - in other words we need to partially apply the word `multiple?`. This can be done with the word `curry`, like this: `[ multiple? ] curry`.
+If we're going to use `bi` in our `prime` definition, as we implied above, we need a second quotation. Our second quotation needs to test for a value in the range being a divisor of `n` - in other words we need to partially apply the word `multiple?`. This can be done with the word `curry`, like this: `[ multiple? ] curry`.
 
-Finally, once we have the range and the test function on the stack, we can test whether any element satisfied divisibility with `any?` and then negate that answer with `not`. Our full definition of `prime` looks like
+Finally, once we have the range of potential divisors and the test function on the stack, we can test whether any element satisfied divisibility with `any?` and then negate that answer with `not`. Our full definition of `prime` looks like
 
     : prime? ( n -- ? ) [ sqrt [2,b] ] [ [ multiple? ] curry ] bi any? not ;
 
