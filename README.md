@@ -191,7 +191,7 @@ Try our new `[2,b]` word and see that it works
 
     6 [2,b] >array .
 
-Using `[2,b]`, producing the range of numbers from `2` to the square root of an `n` that's already on the stack is easy: `sqrt floor [2,b]` (technically `floor` isn't necessary here, as `[a,b]` works for non-integer bounds). Let's try that out
+Using `[2,b]` to produce the range of numbers from `2` to the square root of an `n` that's already on the stack is easy: `sqrt floor [2,b]` (technically `floor` isn't necessary here, as `[a,b]` works for non-integer bounds). Let's try that out
 
     16 sqrt [2,b] >array .
 
