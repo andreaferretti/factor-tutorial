@@ -1,32 +1,32 @@
 A panoramic tour of Factor
 ==========================
 
-[Factor](http://factorcode.org) is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be daunting since the concatenative paradigm is different from most mainstream languages. This tutorial will guide you through the basics of Factor so you can appreciate its simplicity and power. I assume you're an experienced programmer familiar with a functional language, and I'll assume you understand concepts like [folding](http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29), [higher-order functions](http://en.wikipedia.org/wiki/Higher-order_function), and [currying](http://en.wikipedia.org/wiki/Currying).
+[Factor](http://factorcode.org) is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be daunting since the concatenative paradigm is different from most mainstream languages. This tutorial will guide you through the basics of Factor so you can appreciate its simplicity and power. I assume you are an experienced programmer familiar with a functional language, and I'll assume you understand concepts like [folding](http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29), [higher-order functions](http://en.wikipedia.org/wiki/Higher-order_function), and [currying](http://en.wikipedia.org/wiki/Currying).
 
-Even though Factor is a niche language, it's mature and has a comprehensive standard library covering tasks from JSON serialization to socket programming and HTML templating. It runs in its own optimized VM with very high performance for a dynamically typed language. It also has a flexible object system, a [FFI](http://en.wikipedia.org/wiki/Foreign_function_interface) to C, and asynchronous I/O thats a bit like Node.js, but with a much simpler model for cooperative multithreading.
+Even though Factor is a niche language, it is mature and has a comprehensive standard library covering tasks from JSON serialization to socket programming and HTML templating. It runs in its own optimized VM with very high performance for a dynamically typed language. It also has a flexible object system, a [FFI](http://en.wikipedia.org/wiki/Foreign_function_interface) to C, and asynchronous I/O that works a bit like Node.js, but with a much simpler model for cooperative multithreading.
 
 You may wonder why you should care enough about Factor to read this tutorial. Factor has a few significant advantages over other languages, most arising from the fact that it has essentially no syntax:
 
 * refactoring is very easy, leading to short and meaningful function definitions;
-* it's extremely succinct, letting the programmer concentrate on what's important instead of boilerplate;
+* it is extremely succinct, letting the programmer concentrate on what is important instead of boilerplate;
 * it has powerful metaprogramming capabilities, exceeding even those of LISPs;
 * it is ideal to create [DSLs](http://en.wikipedia.org/wiki/Domain-specific_language);
 * it integrates easily with powerful tools.
 
-Before you start this tutorial, [downloaded a copy of Factor](http://factorcode.org) so you can follow along with the examples in the listener (the Factor [REPL](http://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop)).
+Before you start this tutorial, [download a copy of Factor](http://factorcode.org) so you can follow along with the examples in the listener (the Factor [REPL](http://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop)).
 
-I assume you're using Mac OS X or some distribution of Linux, but everything should work the same on other systems, provided you adjust the file paths in the examples.
+I assume you are using Mac OS X or some distribution of Linux, but everything should work the same on other systems, provided you adjust the file paths in the examples.
 
-The first section gives some motivation for cocatenative language's rather peculiar model of computation, but feel free to skip it if you want to get your feet wet and return to it after some hands on practice with Factor.
+The first section gives some motivation for the rather peculiar model of computation of concatenative languages, but feel free to skip it if you want to get your feet wet and return to it after some hands on practice with Factor.
 
 Concatenative languages
 -----------------------
 
 Factor is a *concatenative* programming language in the spirit of [Forth](http://en.wikipedia.org/wiki/Forth_%28programming_language%29). What does this even mean?
 
-To understand cocatenative programming, imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it's implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (unlike in mathematical notation, functions are read from left to right, so this means first execute `f`, then execute `g`).
+To understand cocatenative programming, imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it is implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (unlike in mathematical notation, functions are read from left to right, so this means first execute `f`, then execute `g`).
 
-This requires some explanation, since we know functions often have multiple inputs and outputs, and it's not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so the output of `f` is the whole state of the world as far as `g` is concerned. To make this work, functions have to thread the global state, passing it to each other.
+This requires some explanation, since we know functions often have multiple inputs and outputs, and it is not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so the output of `f` is the whole state of the world as far as `g` is concerned. To make this work, functions have to thread the global state, passing it to each other.
 
 There are various ways this global state can be encoded. The most naive would use a hashmap that maps variable names to their values. This turns out to be too flexible: if every function can access any piece of global state, there is little control on what functions can do, little encapsulation, and ultimately programs become an unstructured mess of routines mutating global variables.
 
@@ -34,7 +34,7 @@ It works well in practice to represent the state of the world as a stack. Functi
 
 So, functions are encouraged to stay small and only refer to the top two or three elements on the stack. In a sense, there is no distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.
 
-Notice that if every function takes the state of the whole world and returns the next state, its input is never used anymore. So, even though it's convenient to think of pure functions as receiving a stack as input and outputting a stack, the semantics of the language can be implemented more efficiently by mutating a single stack.
+Notice that if every function takes the state of the whole world and returns the next state, its input is never used anymore. So, even though it is convenient to think of pure functions as receiving a stack as input and outputting a stack, the semantics of the language can be implemented more efficiently by mutating a single stack.
 
 This leaves concatenative languages like Factor in a strange position, they are both extremely functional - only allowing composition of simpler functions into more complex ones - and largely imperative - describing operations on a mutable stack.
 
@@ -58,7 +58,7 @@ You can enter more that one number, separated by spaces, like `7 3 1`, and get
     7
     4
 
-You can put additional inputs in a single line, so for instance `- *` will leave the single number `15` on the stack (do you see why?). 
+You can put additional inputs in a single line, so for instance `- *` will leave the single number `15` on the stack (do you see why?).
 
 The function `.` (a period or a dot) prints the item at the top of the stack, while popping it out of the stack, leaving the stack empty.
 
@@ -109,7 +109,7 @@ We now want to define a word for factorial that can be used whenever we want a f
 
     : fact ( n -- n! ) [1,b] 1 [ * ] reduce ;
 
-What are stack effects? In our case it's the `( n -- n! )`. Stack effects are how you document the inputs from the stack and outputs to the stack for your word. You can use any identifier to name the stack elements, here we use `n`. Factor will perform a consistency check that the number of inputs and outputs you specify agrees with what the body does.
+What are stack effects? In our case it is the `( n -- n! )`. Stack effects are how you document the inputs from the stack and outputs to the stack for your word. You can use any identifier to name the stack elements, here we use `n`. Factor will perform a consistency check that the number of inputs and outputs you specify agrees with what the body does.
 
 If you try to write
 
@@ -135,7 +135,7 @@ Parsing words
 
 If you've been paying close attention so far, you realize I've lied to you. I said each word acts on the stack in order, but there a few words like `[`, `]`, `:` and `;` that don't seem to follow this rule.
 
-These are **parsing words** and they behave differently from simpler words like `5`, `[1,b]` or `drop`. We will cover these in more detail when we talk about metaprogramming, but for now it's enough to know that parsing words are special.
+These are **parsing words** and they behave differently from simpler words like `5`, `[1,b]` or `drop`. We will cover these in more detail when we talk about metaprogramming, but for now it is enough to know that parsing words are special.
 
 They are not defined using the `:` word, but with the word `SYNTAX:` instead. When a parsing words is encountered, it can interact with the parser using a well-defined API to influence how successive words are parsed. For instance `:` asks for the next tokens from the parsers until `;` is found and tries to compile that stream of tokens into a word definition.
 
@@ -185,13 +185,13 @@ To continue our prime example, we need a way to make a range starting from `2`. 
 
     : [2,b] ( n -- {2,...,n} ) 2 swap [a,b] ; inline
 
-What's up with that `inline` word? This is one of the modifiers we can use after defining a word, another one being `recursive`. This will allow us to have the definition of a short word inlined wherever it is used, rather than incurring a function call. 
+What's up with that `inline` word? This is one of the modifiers we can use after defining a word, another one being `recursive`. This will allow us to have the definition of a short word inlined wherever it is used, rather than incurring a function call.
 
 Try our new `[2,b]` word and see that it works
 
     6 [2,b] >array .
 
-Using `[2,b]` to produce the range of numbers from `2` to the square root of an `n` that's already on the stack is easy: `sqrt floor [2,b]` (technically `floor` isn't necessary here, as `[a,b]` works for non-integer bounds). Let's try that out
+Using `[2,b]` to produce the range of numbers from `2` to the square root of an `n` that is already on the stack is easy: `sqrt floor [2,b]` (technically `floor` isn't necessary here, as `[a,b]` works for non-integer bounds). Let's try that out
 
     16 sqrt [2,b] >array .
 
