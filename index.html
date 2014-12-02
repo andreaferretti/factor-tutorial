@@ -31,34 +31,34 @@
           <h1>
 <a id="a-panoramic-tour-of-factor" class="anchor" href="#a-panoramic-tour-of-factor" aria-hidden="true"><span class="octicon octicon-link"></span></a>A panoramic tour of Factor</h1>
 
-<p><a href="http://factorcode.org">Factor</a> is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be daunting since the concatenative paradigm is different from most mainstream languages. This tutorial will guide you through the basics of Factor so you can appreciate its simplicity and power. I assume you're an experienced programmer familiar with a functional language, and I'll assume you understand concepts like <a href="http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29">folding</a>, <a href="http://en.wikipedia.org/wiki/Higher-order_function">higher-order functions</a>, and <a href="http://en.wikipedia.org/wiki/Currying">currying</a>.</p>
+<p><a href="http://factorcode.org">Factor</a> is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be daunting since the concatenative paradigm is different from most mainstream languages. This tutorial will guide you through the basics of Factor so you can appreciate its simplicity and power. I assume you are an experienced programmer familiar with a functional language, and I'll assume you understand concepts like <a href="http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29">folding</a>, <a href="http://en.wikipedia.org/wiki/Higher-order_function">higher-order functions</a>, and <a href="http://en.wikipedia.org/wiki/Currying">currying</a>.</p>
 
-<p>Even though Factor is a niche language, it's mature and has a comprehensive standard library covering tasks from JSON serialization to socket programming and HTML templating. It runs in its own optimized VM with very high performance for a dynamically typed language. It also has a flexible object system, a <a href="http://en.wikipedia.org/wiki/Foreign_function_interface">FFI</a> to C, and asynchronous I/O thats a bit like Node.js, but with a much simpler model for cooperative multithreading.</p>
+<p>Even though Factor is a niche language, it is mature and has a comprehensive standard library covering tasks from JSON serialization to socket programming and HTML templating. It runs in its own optimized VM with very high performance for a dynamically typed language. It also has a flexible object system, a <a href="http://en.wikipedia.org/wiki/Foreign_function_interface">FFI</a> to C, and asynchronous I/O that works a bit like Node.js, but with a much simpler model for cooperative multithreading.</p>
 
 <p>You may wonder why you should care enough about Factor to read this tutorial. Factor has a few significant advantages over other languages, most arising from the fact that it has essentially no syntax:</p>
 
 <ul>
 <li>refactoring is very easy, leading to short and meaningful function definitions;</li>
-<li>it's extremely succinct, letting the programmer concentrate on what's important instead of boilerplate;</li>
+<li>it is extremely succinct, letting the programmer concentrate on what is important instead of boilerplate;</li>
 <li>it has powerful metaprogramming capabilities, exceeding even those of LISPs;</li>
 <li>it is ideal to create <a href="http://en.wikipedia.org/wiki/Domain-specific_language">DSLs</a>;</li>
 <li>it integrates easily with powerful tools.</li>
 </ul>
 
-<p>Before you start this tutorial, <a href="http://factorcode.org">downloaded a copy of Factor</a> so you can follow along with the examples in the listener (the Factor <a href="http://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop">REPL</a>).</p>
+<p>Before you start this tutorial, <a href="http://factorcode.org">download a copy of Factor</a> so you can follow along with the examples in the listener (the Factor <a href="http://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop">REPL</a>).</p>
 
-<p>I assume you're using Mac OS X or some distribution of Linux, but everything should work the same on other systems, provided you adjust the file paths in the examples.</p>
+<p>I assume you are using Mac OS X or some distribution of Linux, but everything should work the same on other systems, provided you adjust the file paths in the examples.</p>
 
-<p>The first section gives some motivation for cocatenative language's rather peculiar model of computation, but feel free to skip it if you want to get your feet wet and return to it after some hands on practice with Factor.</p>
+<p>The first section gives some motivation for the rather peculiar model of computation of concatenative languages, but feel free to skip it if you want to get your feet wet and return to it after some hands on practice with Factor.</p>
 
 <h2>
 <a id="concatenative-languages" class="anchor" href="#concatenative-languages" aria-hidden="true"><span class="octicon octicon-link"></span></a>Concatenative languages</h2>
 
 <p>Factor is a <em>concatenative</em> programming language in the spirit of <a href="http://en.wikipedia.org/wiki/Forth_%28programming_language%29">Forth</a>. What does this even mean?</p>
 
-<p>To understand cocatenative programming, imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it's implicit, and functions can be literally juxtaposed in order to compose them. So if <code>f</code> and <code>g</code> are two functions, their composition is just <code>f g</code> (unlike in mathematical notation, functions are read from left to right, so this means first execute <code>f</code>, then execute <code>g</code>).</p>
+<p>To understand concatenative programming, imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it is implicit, and functions can be literally juxtaposed in order to compose them. So if <code>f</code> and <code>g</code> are two functions, their composition is just <code>f g</code> (unlike in mathematical notation, functions are read from left to right, so this means first execute <code>f</code>, then execute <code>g</code>).</p>
 
-<p>This requires some explanation, since we know functions often have multiple inputs and outputs, and it's not always the case that the output of <code>f</code> matches the input of <code>g</code>. For instance, <code>g</code> may need access to values computed by earlier functions. But the only thing that <code>g</code> can see is the output of <code>f</code>, so the output of <code>f</code> is the whole state of the world as far as <code>g</code> is concerned. To make this work, functions have to thread the global state, passing it to each other.</p>
+<p>This requires some explanation, since we know functions often have multiple inputs and outputs, and it is not always the case that the output of <code>f</code> matches the input of <code>g</code>. For instance, <code>g</code> may need access to values computed by earlier functions. But the only thing that <code>g</code> can see is the output of <code>f</code>, so the output of <code>f</code> is the whole state of the world as far as <code>g</code> is concerned. To make this work, functions have to thread the global state, passing it to each other.</p>
 
 <p>There are various ways this global state can be encoded. The most naive would use a hashmap that maps variable names to their values. This turns out to be too flexible: if every function can access any piece of global state, there is little control on what functions can do, little encapsulation, and ultimately programs become an unstructured mess of routines mutating global variables.</p>
 
@@ -66,7 +66,7 @@
 
 <p>So, functions are encouraged to stay small and only refer to the top two or three elements on the stack. In a sense, there is no distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.</p>
 
-<p>Notice that if every function takes the state of the whole world and returns the next state, its input is never used anymore. So, even though it's convenient to think of pure functions as receiving a stack as input and outputting a stack, the semantics of the language can be implemented more efficiently by mutating a single stack.</p>
+<p>Notice that if every function takes the state of the whole world and returns the next state, its input is never used anymore. So, even though it is convenient to think of pure functions as receiving a stack as input and outputting a stack, the semantics of the language can be implemented more efficiently by mutating a single stack.</p>
 
 <p>This leaves concatenative languages like Factor in a strange position, they are both extremely functional - only allowing composition of simpler functions into more complex ones - and largely imperative - describing operations on a mutable stack.</p>
 
@@ -93,7 +93,7 @@
 4
 </code></pre>
 
-<p>You can put additional inputs in a single line, so for instance <code>- *</code> will leave the single number <code>15</code> on the stack (do you see why?). </p>
+<p>You can put additional inputs in a single line, so for instance <code>- *</code> will leave the single number <code>15</code> on the stack (do you see why?).</p>
 
 <p>The function <code>.</code> (a period or a dot) prints the item at the top of the stack, while popping it out of the stack, leaving the stack empty.</p>
 
@@ -150,7 +150,7 @@
 <pre><code>: fact ( n -- n! ) [1,b] 1 [ * ] reduce ;
 </code></pre>
 
-<p>What are stack effects? In our case it's the <code>( n -- n! )</code>. Stack effects are how you document the inputs from the stack and outputs to the stack for your word. You can use any identifier to name the stack elements, here we use <code>n</code>. Factor will perform a consistency check that the number of inputs and outputs you specify agrees with what the body does.</p>
+<p>What are stack effects? In our case it is the <code>( n -- n! )</code>. Stack effects are how you document the inputs from the stack and outputs to the stack for your word. You can use any identifier to name the stack elements, here we use <code>n</code>. Factor will perform a consistency check that the number of inputs and outputs you specify agrees with what the body does.</p>
 
 <p>If you try to write</p>
 
@@ -178,7 +178,7 @@
 
 <p>If you've been paying close attention so far, you realize I've lied to you. I said each word acts on the stack in order, but there a few words like <code>[</code>, <code>]</code>, <code>:</code> and <code>;</code> that don't seem to follow this rule.</p>
 
-<p>These are <strong>parsing words</strong> and they behave differently from simpler words like <code>5</code>, <code>[1,b]</code> or <code>drop</code>. We will cover these in more detail when we talk about metaprogramming, but for now it's enough to know that parsing words are special.</p>
+<p>These are <strong>parsing words</strong> and they behave differently from simpler words like <code>5</code>, <code>[1,b]</code> or <code>drop</code>. We will cover these in more detail when we talk about metaprogramming, but for now it is enough to know that parsing words are special.</p>
 
 <p>They are not defined using the <code>:</code> word, but with the word <code>SYNTAX:</code> instead. When a parsing words is encountered, it can interact with the parser using a well-defined API to influence how successive words are parsed. For instance <code>:</code> asks for the next tokens from the parsers until <code>;</code> is found and tries to compile that stream of tokens into a word definition.</p>
 
@@ -232,14 +232,14 @@ rot ( x y z -- y z x )
 <pre><code>: [2,b] ( n -- {2,...,n} ) 2 swap [a,b] ; inline
 </code></pre>
 
-<p>What's up with that <code>inline</code> word? This is one of the modifiers we can use after defining a word, another one being <code>recursive</code>. This will allow us to have the definition of a short word inlined wherever it is used, rather than incurring a function call. </p>
+<p>What's up with that <code>inline</code> word? This is one of the modifiers we can use after defining a word, another one being <code>recursive</code>. This will allow us to have the definition of a short word inlined wherever it is used, rather than incurring a function call.</p>
 
 <p>Try our new <code>[2,b]</code> word and see that it works</p>
 
 <pre><code>6 [2,b] &gt;array .
 </code></pre>
 
-<p>Using <code>[2,b]</code> to produce the range of numbers from <code>2</code> to the square root of an <code>n</code> that's already on the stack is easy: <code>sqrt floor [2,b]</code> (technically <code>floor</code> isn't necessary here, as <code>[a,b]</code> works for non-integer bounds). Let's try that out</p>
+<p>Using <code>[2,b]</code> to produce the range of numbers from <code>2</code> to the square root of an <code>n</code> that is already on the stack is easy: <code>sqrt floor [2,b]</code> (technically <code>floor</code> isn't necessary here, as <code>[a,b]</code> works for non-integer bounds). Let's try that out</p>
 
 <pre><code>16 sqrt [2,b] &gt;array .
 </code></pre>
