@@ -24,7 +24,7 @@ Concatenative languages
 
 Factor is a *concatenative* programming language in the spirit of [Forth](http://en.wikipedia.org/wiki/Forth_%28programming_language%29). What does this even mean?
 
-To understand cocatenative programming, imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it is implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (unlike in mathematical notation, functions are read from left to right, so this means first execute `f`, then execute `g`).
+To understand concatenative programming, imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it is implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (unlike in mathematical notation, functions are read from left to right, so this means first execute `f`, then execute `g`).
 
 This requires some explanation, since we know functions often have multiple inputs and outputs, and it is not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so the output of `f` is the whole state of the world as far as `g` is concerned. To make this work, functions have to thread the global state, passing it to each other.
 
