@@ -1,38 +1,40 @@
 A panoramic tour of Factor
 ==========================
 
-[Factor](http://factorcode.org) is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be rather daunting, as it follows a paradigm quite far from most mainstream languages. This tutorial will guide you through the basics so that you will be able to appreciate its simplicity and power. I will assume that you are familiar with some functional language, as I will mention freely concepts like [folding](http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29), [higher-order functions](http://en.wikipedia.org/wiki/Higher-order_function), or [currying](http://en.wikipedia.org/wiki/Currying).
+[Factor](http://factorcode.org) is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be daunting since the concatenative paradigm is different from most mainstream languages. This tutorial will guide you through the basics of Factor so you can appreciate its simplicity and power. I assume you're an experienced programmer familiar with a functional language, and I'll assume you understand concepts like [folding](http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29), [higher-order functions](http://en.wikipedia.org/wiki/Higher-order_function), and [currying](http://en.wikipedia.org/wiki/Currying).
 
-Even if Factor is a rather niche language, it is mature and features a comprehensive standard library covering tasks from JSON serialization to socket programming or HTML templating. It runs in its own optimized VM, usually reaching top performance for a dynamically typed language. It also has a flexible object system, a FFI with C, and asynchronous I/O - a bit like Node.js, but with a much simpler model for cooperative multithreading.
+Even though Factor is a niche language, it's mature and has a comprehensive standard library covering tasks from JSON serialization to socket programming and HTML templating. It runs in its own optimized VM with very high performance for a dynamically typed language. It also has a flexible object system, a [FFI](http://en.wikipedia.org/wiki/Foreign_function_interface) to C, and asynchronous I/O thats a bit like Node.js, but with a much simpler model for cooperative multithreading.
 
-You may wonder why should you care enough to read this long tutorial. Factor has a few significant advantages over other languages, most arising from the fact that it has essentially no syntax:
+You may wonder why you should care enough about Factor to read this tutorial. Factor has a few significant advantages over other languages, most arising from the fact that it has essentially no syntax:
 
-* refactoring is very easy, leading to short and meaningful definitions;
-* it is extremely succinct, letting the programmer concentrate on what has to be done instead of boilerplate;
-* it has powerful metaprogramming capabilities, exceeding those of LISPs;
-* it is ideal to embed DSLs;
+* refactoring is very easy, leading to short and meaningful function definitions;
+* it's extremely succinct, letting the programmer concentrate on what's important instead of boilerplate;
+* it has powerful metaprogramming capabilities, exceeding even those of LISPs;
+* it is ideal to create [DSLs](http://en.wikipedia.org/wiki/Domain-specific_language);
 * it integrates easily with powerful tools.
 
-In this tutorial, we assume that you have [downloaded a copy of Factor](http://factorcode.org) and that you are following along with the examples in the listener (the Factor REPL). The first section gives some motivation for the rather peculiar model of computation, but feel free to skip it if you want to get your feet wet and return to it after some practice.
+Before you start this tutorial, [downloaded a copy of Factor](http://factorcode.org) so you can follow along with the examples in the listener (the Factor [REPL](http://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop)).
 
-I will also assume that you are using some distribution of Linux, but everything should work the same on other systems, provided you adjust the paths in the examples.
+I assume you're using Mac OS X or some distribution of Linux, but everything should work the same on other systems, provided you adjust the file paths in the examples.
+
+The first section gives some motivation for cocatenative language's rather peculiar model of computation, but feel free to skip it if you want to get your feet wet and return to it after some hands on practice with Factor.
 
 Concatenative languages
 -----------------------
 
 Factor is a *concatenative* programming language in the spirit of [Forth](http://en.wikipedia.org/wiki/Forth_%28programming_language%29). What does this even mean?
 
-Imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it is usually implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (unlike in mathematical notation, functions are read from left to right, so this means first execute `f`, then `g`).
+To understand cocatenative programming, imagine a world where every value is a function, and the only operation allowed is function composition. Since function composition is so pervasive, it's implicit, and functions can be literally juxtaposed in order to compose them. So if `f` and `g` are two functions, their composition is just `f g` (unlike in mathematical notation, functions are read from left to right, so this means first execute `f`, then execute `g`).
 
-This requires some explanation, since functions often have multiple inputs and outputs, and it's not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so this is the whole state of the world as far as `g` is concerned. So, to make this work, functions have to thread the global state, passing it to each other.
+This requires some explanation, since we know functions often have multiple inputs and outputs, and it's not always the case that the output of `f` matches the input of `g`. For instance, `g` may need access to values computed by earlier functions. But the only thing that `g` can see is the output of `f`, so the output of `f` is the whole state of the world as far as `g` is concerned. To make this work, functions have to thread the global state, passing it to each other.
 
-There are various ways this global state can be encoded. The most naive would use a hashmap that maps variable names to their values. This turns out to be too flexible:  if every function can access randomly any piece of global state, there is little control on what functions can do, little encapsulation, and ultimately programs become an unstructured mess of routines mutating global variables.
+There are various ways this global state can be encoded. The most naive would use a hashmap that maps variable names to their values. This turns out to be too flexible: if every function can access any piece of global state, there is little control on what functions can do, little encapsulation, and ultimately programs become an unstructured mess of routines mutating global variables.
 
-It works well in practice to represent the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (e.g., `swap`, that exchanges the two elements on top), then it becomes possible to refer to values down the stack, but the farther down the stack, the harder it becomes to refer to it.
+It works well in practice to represent the state of the world as a stack. Functions can only refer to the topmost element of the stack, so that elements below it are effectively out of scope. If a few primitives are given to manipulate a few elements on the stack (e.g., `swap`, that exchanges the top two elements on the stack), then it becomes possible to refer to values down the stack, but the farther the value is down the stack, the harder it becomes to refer to it.
 
-So, functions are encouraged to stay small and only refer to the top two or three elements. In a sense, there is no distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.
+So, functions are encouraged to stay small and only refer to the top two or three elements on the stack. In a sense, there is no distinction between local and global variables, but values can be more or less local depending on their distance from the top of the stack.
 
-Notice that if every function takes the state of the whole world and returns the next state, its input is never used anymore. So, even though it's convenient to think of pure functions receiving a stack as input and outputting a stack, the semantics of the language can be implemented more efficiently by mutating a single stack.
+Notice that if every function takes the state of the whole world and returns the next state, its input is never used anymore. So, even though it's convenient to think of pure functions as receiving a stack as input and outputting a stack, the semantics of the language can be implemented more efficiently by mutating a single stack.
 
 This leaves concatenative languages like Factor in a strange position, they are both extremely functional - only allowing composition of simpler functions into more complex ones - and largely imperative - describing operations on a mutable stack.
 
@@ -79,43 +81,43 @@ Defining our first word
 
 We will now define our first function. Factor has slightly odd naming of functions: since functions are read from left to right, they are simply called **words**, and this is what we'll call them from now on. Modules in Factor define words in terms of previous words and these sets of words are then called **vocabularies**.
 
-Suppose we want to compute the factorial. To start with a concrete example, we'll compute the factorial of `10`, so we start by writing `10` on the stack. Now, the factorial is the product of the numbers from `1` to `10`, so we should produce such a list of numbers first.
+Suppose we want to compute the [factorial](http://en.wikipedia.org/wiki/Factorial). To start with a concrete example, we'll compute the factorial of `10`, so we start by writing `10` on the stack. Now, the factorial is the product of the numbers from `1` to `10`, so we should produce such a list of numbers first.
 
-The word to produce a range is reasonably called `[a,b]` (tokenization is trivial in Factor because words are always space separated, so this allows you to use any combination of non-whitespace characters as the name of a word; there are no semantics to the `[`, the `,` and the `]` in `[a,b]` since it is just a token like `foo` or `bar`).
+The word to produce a range is called `[a,b]` (tokenization is trivial in Factor because words are always separated by spaces, so this allows you to use any combination of non-whitespace characters as the name of a word; there are no semantics to the `[`, the `,` and the `]` in `[a,b]` since it is just a token like `foo` or `bar`).
 
-The range we want starts with `1`, so we can use the simpler word `[1,b]` that only expects the top of the range to be on the stack. If you write `[1,b]` in the listener, you will be prompted with a choice, because the word `[1,b]` is not imported by default. Factor is able to suggest you import the `math.ranges` vocabulary, so choose that option and proceed.
+The range we want starts with `1`, so we can use the simpler word `[1,b]` that assumes the range starts at `1` and only expects the value at the top of the range to be on the stack. If you write `[1,b]` in the listener, Factor will prompt you with a choice, because the word `[1,b]` is not imported by default. Factor is able to suggest you import the `math.ranges` vocabulary, so choose that option and proceed.
 
 You should now have on your stack a rather opaque structure which looks like
 
     T{ range f 1 10 1 }
 
-This is because our range functions are lazy. To confirm that we actually have created the list of numbers from `1` to `10`, we convert it into an array using the word `>array`. Your stack should now look like
+This is because our range functions are lazy and only create the range when we attempt to use it. To confirm that we actually created the list of numbers from `1` to `10`, we convert the lazy response on the stack into an array using the word `>array`. Enter that word and your stack should now look like
 
     { 1 2 3 4 5 6 7 8 9 10 }
 
 which is promising!
 
-Next, we want to take the product of those numbers. In many languages, this could be done with a function called reduce or fold. Let us look for one. Pressing `F1` will open a contextual help, where you can search for `reduce`. It turns out that `reduce` is actually the word we are looking for, but at this point it may not be obvious how to use it.
+Next, we want to take the product of those numbers. In many functional languages, this could be done with a function called reduce or fold. Let's look for one. Pressing `F1` in the listener will open a contextual help system, where you can search for `reduce`. It turns out that `reduce` is actually the word we are looking for, but at this point it may not be obvious how to use it.
 
-Try writing `1 [ * ] reduce` and look at the output: it is indeed the factorial of `10`. Now, `reduce` usually takes three arguments: a sequence (and we had one on the stack), a starting point (this is the `1` we put on the stack next) and a binary operation. This must certainly be the `*`, but what about those square brackets around the `*`?
+Try writing `1 [ * ] reduce` and look at the output: it is indeed the factorial of `10`. Now, `reduce` usually takes three arguments: a sequence (and we had one on the stack), a starting value (this is the `1` we put on the stack next) and a binary operation. This must certainly be the `*`, but what about those square brackets around the `*`?
 
-If we had written just `*`, Factor would have tried to apply multiplication to the topmost two elements, which is not what we wanted. What we need is a way to get a word onto the stack without applying it. Keeping our textual metaphor, this mechanism is called **quotation**. To quote one or more words, you just surround them by `[` and `]` (leaving spaces!). What you get is akin to an anonymous function in other languages.
+If we had written just `*`, Factor would have tried to apply multiplication to the topmost two elements on the stack, which is not what we wanted. What we need is a way to get a word onto the stack without applying it. Keeping to our textual metaphor, this mechanism is called **quotation**. To quote one or more words, you just surround them by `[` and `]` (leaving spaces!). What you get is akin to an anonymous function in other languages.
 
-Let's type the word `drop` into the listener to empty the stack, and try writing what we have done so far in a single line: `10 [1,b] 1 [ * ] reduce`. This will leave `3628800` on the stack as expected.
+Let's type the word `drop` into the listener to empty the stack, and try writing what we have done so far in a single line: `10 [1,b] 1 [ * ] reduce .`. This will leave `3628800` on the stack as expected.
 
-We now want to define a word for factorial that can be called whenever we want. We will call our word `fact` (although `!` is customarily used as the symbol for factorial, in Factor `!` is the word used for comments). To define it, we first need to use the word `:`. Then we put the name of the word being defined, then the **stack effects** and finally the body, ending with the `;` word:
+We now want to define a word for factorial that can be used whenever we want a factorial. We will call our word `fact` (although `!` is customarily used as the symbol for factorial, in Factor `!` is the word used for comments). To define it, we first need to use the word `:`. Then we put the name of the word being defined, then the **stack effects** and finally the body, ending with the `;` word:
 
     : fact ( n -- n! ) [1,b] 1 [ * ] reduce ;
 
-What are the stack effects? These are the part like `( n -- n! )` in our case. They have no effect on the function, but allow you to name your inputs and outputs for documenting purposes. You can use any identifier to name them, and Factor will only make a consistency check that the number of inputs and outputs agrees with what the body does.
+What are stack effects? In our case it's the `( n -- n! )`. Stack effects are how you document the inputs from the stack and outputs to the stack for your word. You can use any identifier to name the stack elements, here we use `n`. Factor will perform a consistency check that the number of inputs and outputs you specify agrees with what the body does.
 
 If you try to write
 
     : fact ( m n -- n! ) [1,b] 1 [ * ] reduce ;
 
-Factor will signal an error that the number of inputs is not consistent. To restore the previous correct definition press `Ctrl+P` two times to get back to the previous input and then enter it.
+Factor will signal an error that the 2 inputs (`m` and `n`) are not consistent with the body of the word. To restore the previous correct definition press `Ctrl+P` two times to get back to the previous input and then enter it.
 
-We can think at the stack effects in definitions both as a documenting tool and as a simple type system, which nevertheless does catch a few errors.
+We can think at the stack effects in definitions both as a documentation tool and as a very simple type system, which nevertheless does catch a few errors.
 
 In any case, you have succesfully defined your first word: if you write `10 fact` in the listener you can prove it.
 
@@ -124,31 +126,31 @@ Notice that the `1 [ * ] reduce` part of the definition sort of makes sense on i
     : prod ( {x1,...,xn} -- x1*...*xn ) 1 [ * ] reduce ;
     : fact ( n -- n! ) [1,b] prod ;
 
-Our definitions have become simpler and there was no need to pass parameters, rename local variables or anything that would have been necessary to factor out a part of the definition in a different language.
+Our definitions have become simpler and there was no need to pass parameters, rename local variables, or do anything else that would have been necessary to refactor our function in most languages.
 
-Of course, Factor already has a word for the factorial (actually there is a whole `math.factorials` vocabulary, including many variants of the usual factorial) and for the product (`product` in the `sequences` vocabulary), but as it often happens introductory examples overlap with the standard library.
+Of course, Factor already has a word for the factorial (actually there is a whole `math.factorials` vocabulary, including many variants of the usual factorial) and a word for the product (`product` in the `sequences` vocabulary), but as it often happens introductory examples overlap with the standard library.
 
 Parsing words
 -------------
 
-If you have paid attention until now, you will realized that I have lied to you. I have said that each word acts on the stack in order, but there a few words like `[`, `]`, `:` and `;` that certainly seem not to abide to this rule.
+If you've been paying close attention so far, you realize I've lied to you. I said each word acts on the stack in order, but there a few words like `[`, `]`, `:` and `;` that don't seem to follow this rule.
 
-In fact these are **parsing words** and behave differently from simpler words like `5`, `[1,b]` or `drop`. We will get into more detail when we talk about metaprogramming, but for now it is enough to know that parsing words are special.
+These are **parsing words** and they behave differently from simpler words like `5`, `[1,b]` or `drop`. We will cover these in more detail when we talk about metaprogramming, but for now it's enough to know that parsing words are special.
 
-They are not defined using `:`, but using `SYNTAX:` instead. When a parsing words is encountered, it can interact with the parser using a well-defined API to influence how successive words are parsed. For instance `:` asks the next tokens from the parsers until `;` is found and tries to compile that stream of tokens into a word definition.
+They are not defined using the `:` word, but with the word `SYNTAX:` instead. When a parsing words is encountered, it can interact with the parser using a well-defined API to influence how successive words are parsed. For instance `:` asks for the next tokens from the parsers until `;` is found and tries to compile that stream of tokens into a word definition.
 
-A common use of parsing words is to define literals. For instance, `{` is a parsing word that starts an array definition and is terminated by `}`. Everything in-between is part of the array. An example of array that we have seen before is `{ 1 2 3 4 5 6 7 8 9 10 }`.
+A common use of parsing words is to define literals. For instance `{` is a parsing word that starts an array definition and is terminated by `}`. Everything in-between is part of the array. An example of array that we have seen before is `{ 1 2 3 4 5 6 7 8 9 10 }`.
 
-There are also literals for hashmaps, like `H{ { "Perl" "Larry Wall" } { "Factor" "Slava Pestov" } { "Scala" "Martin Odersky" } }`, or byte arrays, like `B{ 1 14 18 23 }`.
+There are also literals for hashmaps, `H{ { "Perl" "Larry Wall" } { "Factor" "Slava Pestov" } { "Scala" "Martin Odersky" } }`, and byte arrays, `B{ 1 14 18 23 }`.
 
-Other uses of parsing word include the module system, the object oriented features of Factor, enums, memoized functions, privacy modifiers and more. In theory, even `SYNTAX:` can be defined in terms of itself, although of course the system has to be bootstrapped somehow.
+Other uses of parsing word include the module system, the object-oriented features of Factor, enums, memoized functions, privacy modifiers and more. In theory, even `SYNTAX:` can be defined in terms of itself, although of course the system has to be bootstrapped somehow.
 
 Stack shuffling
 ---------------
 
-Now that you know the basics of Factor, you may want to start assembling more complex words. This sometimes may require to use variables that are not on top of the stack, or to use variables more that once. There are a few words that can be used to this effect. I will mention them now, since you'd better be aware of them, but warn you that code using many of those words can quickly become hard to write and harder to read. It requires mentally simulating moving values on a stack, which is not a natural way to program. We will see a much more effective way to handle most needs in next section.
+Now that you know the basics of Factor, you may want to start assembling more complex words. This may sometimes require you to use variables that are not on top of the stack, or to use variables more that once. There are a few words that can be used to help with this. I mention them now since you need to be aware of them, but I warn you that using too many of these words to manipulate the stack will cause your code to quickly become harder to read and write. Stack shuffling requires mentally simulating moving values on a stack, which is not a natural way to program. In the next section we'll see a much more effective way to handle most needs.
 
-I will just write the most common shuffling words together with their effect on the stack. Feel free to try them in the listener, and explore the online help to find out more.
+Here is a list of the most common shuffling words together with their effect on the stack. Try them in the listener to get a feel for how they manipulate the stack, and explore the online help to find out more.
 
     dup ( x -- x x )
     drop ( x -- )
@@ -164,38 +166,55 @@ I will just write the most common shuffling words together with their effect on 
 Combinators
 -----------
 
-Although the words mentioned in the previous paragraph are occasionally useful (especially `dup`, `drop` and `swap`), one should aim to write code that does as little stack shuffling as possible. This requires a certain practice in putting the function arguments in the right order from the start.
+Although the words mentioned in the previous paragraph are occasionally useful (especially the simpler `dup`, `drop` and `swap`), you should write code that does as little stack shuffling as possible. This requires practice getting the function arguments in the right order. Nevertheless, there are certain common patterns of needed stack manipulation that are better abstracted away into their own words.
 
-Nevertheless, there are certain patterns of use that are better abstracted away into their own words. For instance, say we want to define a word to determine whether a given number `n` is prime. A simple algorithm would be to test each number from `2` to the square root of `n` and see whether it is a divisor of `n`.
+Suppose we want to define a word to determine whether a given number `n` is prime. A simple algorithm is to test each number from `2` to the square root of `n` and see whether it is a divisor of `n`. In this case, `n` is used in two places: as an upper bound for the sequence, and as the number to test for divisibility.
 
-This immediately shows that `n` is used in two places: as an upper bound for the sequence, and as the number to test for divisibility. The word `bi` applies two different quotations to an element on the stack, and this is precisely what we need. For instance `5 [ 2 * ] [ 3 + ] bi` yields
+The word `bi` applies two different quotations to the single element on the stack above them, and this is precisely what we need. For instance `5 [ 2 * ] [ 3 + ] bi` yields
 
     10
     8
 
-To continue with our example, will need a word to test divisibility, and a quick search in the online help shows that `divisor?` is what we want. We will also need a way to make a range starting from `2`, which we can define like
+`bi` applies the quotation `[ 2 * ]` to the value `5` and then the quotation `[ 3 + ]` to the value `5` leaving us with `10` and then `8` on the stack. Without `bi`, we would have to first `dup` `5`, then multiply, and then `swap` the result of the multiplication with the second `5`, so we could do the addition
+
+    5 dup 2 * swap 3 +
+
+You can see that `bi` replaces a common pattern of `dup`, then calculate, then `swap` and calculate again.
+
+To continue our prime example, we need a way to make a range starting from `2`. We can define our own word for this `[2,b]`, using the `[a,b]` range word we discussed earlier
 
     : [2,b] ( n -- {2,...,n} ) 2 swap [a,b] ; inline
 
-What's up with that `inline` word? This is one of the modifiers we can use after defining a word, another one being `recursive`. This will allow us to have the definition of the word inlined wherever it is used, rather than incurring a function call.
+What's up with that `inline` word? This is one of the modifiers we can use after defining a word, another one being `recursive`. This will allow us to have the definition of a short word inlined wherever it is used, rather than incurring a function call. 
 
-It may also help to have the arguments for divisibility in the other direction, so we define
+Try our new `[2,b]` word and see that it works
+
+    6 [2,b] >array .
+
+Using `[2,b]` to produce the range of numbers from `2` to the square root of an `n` that's already on the stack is easy: `sqrt floor [2,b]` (technically `floor` isn't necessary here, as `[a,b]` works for non-integer bounds). Let's try that out
+
+    16 sqrt [2,b] >array .
+
+Now, we need a word to test for divisibility. A quick search in the online help shows that `divisor?` is the word we want. It will help to have the arguments for testing divisibility in the other direction, so we define `multiple?`
 
     : multiple? ( a b -- ? ) swap divisor? ; inline
 
-Now, producing the range of numbers from `2` to the square root of `n` is easy: `sqrt floor [2,b]` (`floor` is not even necessary, as `[a,b]` works for non-integer bounds). What about the second function?
+Both of these return `t`
 
-We must produce a function that test for being a divisor of `n` - in other words we need to partially apply the word `multiple?`. This can be done with the word `curry`, like this: `[ multiple? ] curry`.
+    9 3 divisor? .
+    3 9 multiple? .
 
-Finally, once we have the range and the test function on the stack, we can test whether any element satisfies the divisibility with `any?`. Our full definition looks like
+If we're going to use `bi` in our `prime` definition, as we implied above, we need a second quotation. Our second quotation needs to test for a value in the range being a divisor of `n` - in other words we need to partially apply the word `multiple?`. This can be done with the word `curry`, like this: `[ multiple? ] curry`.
+
+Finally, once we have the range of potential divisors and the test function on the stack, we can test whether any element satisfied divisibility with `any?` and then negate that answer with `not`. Our full definition of `prime` looks like
 
     : prime? ( n -- ? ) [ sqrt [2,b] ] [ [ multiple? ] curry ] bi any? not ;
 
-Altough the definition is slightly complicated, the stack shuffling is minimal and limited to the small helper functions, which are much simpler to reason about than `prime?`.
+Altough the definition of `prime` is complicated, the stack shuffling is minimal and is only used in the small helper functions, which are simpler to reason about than `prime?`.
 
-Notice that our `prime?` word uses two levels of quotation nesting. In general, Factor words tend to be rather shallow, using one level of nesting for each higher-order function, unlike Lisps or more generally languages based on the lambda calculus, which use one level of nesting for each function, higher-order or not.
+Notice that `prime?` uses two levels of quotation nesting since `bi` operates on two quotations, and our second quotation contains the word `curry`, which also operates on a quotation. In general, Factor words tend to be rather shallow, using one level of nesting for each higher-order function, unlike Lisps or more generally languages based on the lambda calculus, which use one level of nesting for each function, higher-order or not.
 
-Many more combinators exists other than `bi` (and its relative `tri`), and you should become acquainted at least with `bi*` and `bi@`.
+Many more combinators exists other than `bi` (and its relative `tri`), and you should become acquainted at least with `bi`, `tri`, `bi*` and `bi@` by reading about them in the online help and trying them out in the listener.
 
 Vocabularies
 ------------
