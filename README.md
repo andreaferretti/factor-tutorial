@@ -103,7 +103,7 @@ Try writing `1 [ * ] reduce` and look at the output: it is indeed the factorial 
 
 If we had written just `*`, Factor would have tried to apply multiplication to the topmost two elements on the stack, which is not what we wanted. What we need is a way to get a word onto the stack without applying it. Keeping to our textual metaphor, this mechanism is called **quotation**. To quote one or more words, you just surround them by `[` and `]` (leaving spaces!). What you get is akin to an anonymous function in other languages.
 
-Let's type the word `drop` into the listener to empty the stack, and try writing what we have done so far in a single line: `10 [1,b] 1 [ * ] reduce .`. This will leave `3628800` on the stack as expected.
+Let's type the word `drop` into the listener to empty the stack, and try writing what we have done so far in a single line: `10 [1,b] 1 [ * ] reduce`. This will leave `3628800` on the stack as expected.
 
 We now want to define a word for factorial that can be used whenever we want a factorial. We will call our word `fact` (although `!` is customarily used as the symbol for factorial, in Factor `!` is the word used for comments). To define it, we first need to use the word `:`. Then we put the name of the word being defined, then the **stack effects** and finally the body, ending with the `;` word:
 
@@ -148,7 +148,7 @@ Other uses of parsing word include the module system, the object-oriented featur
 Stack shuffling
 ---------------
 
-Now that you know the basics of Factor, you may want to start assembling more complex words. This may sometimes require you to use variables that are not on top of the stack, or to use variables more that once. There are a few words that can be used to help with this. I mention them now since you need to be aware of them, but I warn you that using too many of these words to manipulate the stack will cause your code to quickly become harder to read and write. Stack shuffling requires mentally simulating moving values on a stack, which is not a natural way to program. In the next section we'll see a much more effective way to handle most needs.
+Now that you know the basics of Factor, you may want to start assembling more complex words. This may sometimes require you to use variables that are not on top of the stack, or to use variables more than once. There are a few words that can be used to help with this. I mention them now since you need to be aware of them, but I warn you that using too many of these words to manipulate the stack will cause your code to quickly become harder to read and write. Stack shuffling requires mentally simulating moving values on a stack, which is not a natural way to program. In the next section we'll see a much more effective way to handle most needs.
 
 Here is a list of the most common shuffling words together with their effect on the stack. Try them in the listener to get a feel for how they manipulate the stack, and explore the online help to find out more.
 
@@ -301,7 +301,7 @@ Tests are written using the `unit-test` word, which expects two quotations: the 
     [ f ] [ 1 prime? ] unit-test
     [ t ] [ 20750750228539 prime? ] unit-test
 
-You can now run the tests with `github.tutorial` test. You will see that we have actually made a mistake, and pressing `F3` will show more details. It seems that our assertions fails for `2`.
+You can now run the tests with `"github.tutorial" test`. You will see that we have actually made a mistake, and pressing `F3` will show more details. It seems that our assertions fails for `2`.
 
 In fact, if you manually try to run our functions for `2`, you will see that our defition of `[2,b]` returns `{ 2 }` for `2 sqrt`, due to the fact that the square root of two is less than two, so we get a descending interval. Try making a fix so that the tests now pass.
 
