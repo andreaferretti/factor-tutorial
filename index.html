@@ -575,7 +575,7 @@ IN: lintme
 
 <p>Now, you would not certainly want to modify the source of a word in the standard library - let alone a private one - but in more complex cases the lint tool is able to find actual repetitions. It is a good idea to lint your vocabularies from time to time, to avoid code duplication and as a good way to discover library words that you may have accidentally redefined.</p>
 
-<p>Finally, there are a few utilities to inspect words. You can see the definition of a word in the help tool, but a quicker way can be <code>see</code>. Or, viceversa, you may use <code>usage.</code> to inspect the callers of a given word. Try <code>\ reverse see</code> and <code>\ reverse usage.</code>.</p>
+<p>Finally, there are a few utilities to inspect words. You can see the definition of a word in the help tool, but a quicker way can be <code>see</code>. Or, vice versa, you may use <code>usage.</code> to inspect the callers of a given word. Try <code>\ reverse see</code> and <code>\ reverse usage.</code>.</p>
 
 <h2>
 <a id="metaprogramming" class="anchor" href="#metaprogramming" aria-hidden="true"><span class="octicon octicon-link"></span></a>Metaprogramming</h2>
@@ -692,7 +692,7 @@ IN: lintme
 <pre><code>: prime? ( n -- ? ) [ '[ 2 _ sqrt [a,b] ] call ] [ '[ _ swap divisor? ] ] bi any? not ;
 </code></pre>
 
-<p>Depending on you taste, you may find this version more readable. In this case, the added clarity is probably lost due to the fact that the fried quotations are themselves inside quotations, but occasionally their use can do a lot to simplify the flow.</p>
+<p>Depending on your taste, you may find this version more readable. In this case, the added clarity is probably lost due to the fact that the fried quotations are themselves inside quotations, but occasionally their use can do a lot to simplify the flow.</p>
 
 <p>Finally, there are times where one just wants to give names to variables that are available inside some scope, and use them where necessary. These variables can hold values that are global, or at least not local to a single word. A typical example could be the input and output streams, or database connections.</p>
 
@@ -728,7 +728,7 @@ favorite-language get
 
 <p>All of Factor input/output words are centered on <strong>streams</strong>. Streams are lazy sequences which can be read or written to, typical examples being files, network ports or the standard input and output. Factor holds a couple of dynamic variables called <code>input-stream</code> and <code>output-stream</code>, which are used by most I/O words. These variables can be rebound locally using <code>with-input-stream</code>, <code>with-output-stream</code> and <code>with-streams</code>. When you are in the listener, the default streams write and read in the listener, but once you deploy your application as an executable, they are usually bound to the standard input and output of your console.</p>
 
-<p>The words <code>&lt;file-reader&gt;</code> and <code>&lt;file-writer&gt;</code> (or <code>&lt;file-appender&gt;</code>) can be used to create a read or write stream to a file, given its path and encoding. Putting everything together, we make a simple example of a word that reads each line of a file encoded in UTF8, and write the first letter of the line to the listener.</p>
+<p>The words <code>&lt;file-reader&gt;</code> and <code>&lt;file-writer&gt;</code> (or <code>&lt;file-appender&gt;</code>) can be used to create a read or write stream to a file, given its path and encoding. Putting everything together, we make a simple example of a word that reads each line of a file encoded in UTF8, and writes the first letter of the line to the listener.</p>
 
 <p>First, we want a <code>safe-head</code> word, that works like <code>head</code>, but returns its input if the sequence is too short. To do so, we will use the word <code>recover</code>, which allows us to declare a try-catch block. It requires two quotations: the first one is executed, and on failure, the second one is executed with the error as input. Hence we can define</p>
 
@@ -789,7 +789,7 @@ favorite-language get
 <h2>
 <a id="deploying-programs" class="anchor" href="#deploying-programs" aria-hidden="true"><span class="octicon octicon-link"></span></a>Deploying programs</h2>
 
-<p>There are two ways to run Factor programs outside the listener: as scripts, which are interpreted by Factor, or as standalone executable compiled for your platform. Both require to define a vocabulary with an entry point (altough there is an even simpler way for scripts), so let's do that first.</p>
+<p>There are two ways to run Factor programs outside the listener: as scripts, which are interpreted by Factor, or as standalone executable compiled for your platform. Both require you to define a vocabulary with an entry point (altough there is an even simpler way for scripts), so let's do that first.</p>
 
 <p>Start by creating our <code>ls</code> vocabulary with <code>"ls" scaffold-work</code> and make it look like this:</p>
 
@@ -831,7 +831,7 @@ PRIVATE&gt;
 <pre><code>./factor -run=ls /home/andrea
 </code></pre>
 
-<p>In order to produce an executable, we must set some options and call the <code>deploy</code> word. The simplest way to this graphically is to invoke the <code>deploy-tool</code> word. If you write <code>"ls" deploy-tool</code>, you will be presented with a window to choose deployment options. For our simple case, we will leave the default options and choose Deploy.</p>
+<p>In order to produce an executable, we must set some options and call the <code>deploy</code> word. The simplest way to do this graphically is to invoke the <code>deploy-tool</code> word. If you write <code>"ls" deploy-tool</code>, you will be presented with a window to choose deployment options. For our simple case, we will leave the default options and choose Deploy.</p>
 
 <p>After a little while, you should be presented with an executable that you can run like</p>
 
@@ -844,19 +844,19 @@ PRIVATE&gt;
 <h2>
 <a id="multithreading" class="anchor" href="#multithreading" aria-hidden="true"><span class="octicon octicon-link"></span></a>Multithreading</h2>
 
-<p>As we have said, the Factor runtime is single-threaded, like Node. Still, one can emulate concurrency in a single-threaded setting by making use of <strong>coroutines</strong>. This are essentially cooperative threads, which periodically release control with the <code>yield</code> word, so that the scheduler can decide which coroutine run next.</p>
+<p>As we have said, the Factor runtime is single-threaded, like Node. Still, one can emulate concurrency in a single-threaded setting by making use of <strong>coroutines</strong>. These are essentially cooperative threads, which periodically release control with the <code>yield</code> word, so that the scheduler can decide which coroutine to run next.</p>
 
 <p>Although cooperative threads do not allow to make use of multiple cores, they still have some benefits:</p>
 
 <ul>
-<li>input/output operations can avoid to block the entire runtime, so that one can implement quite performant applications if I/O is the bottleneck;</li>
+<li>input/output operations can avoid blocking the entire runtime, so that one can implement quite performant applications if I/O is the bottleneck;</li>
 <li>user interfaces are naturally a multithreaded construct, and they can be implemented in this model, as the listener itself shows;</li>
-<li>finally, some problems may just naturally be easier to write making use of multithreaded constructs.</li>
+<li>finally, some problems may just naturally be easier to write making use of the multithreaded constructs.</li>
 </ul>
 
 <p>For the cases where one wants to make use of multiple cores, Factor offers the possibility of spawning other processes and communicating between them with the use of <strong>channels</strong>, as we will see in a later section.</p>
 
-<p>Threads in Factors are created out of a quotation and a name, with the <code>spawn</code> word. Let use use this to print the first few lines of Star Wars, one per second, each line being printed inside its own thread. First, let us write those lines inside a dynamic variable:</p>
+<p>Threads in Factors are created out of a quotation and a name, with the <code>spawn</code> word. Let us use this to print the first few lines of Star Wars, one per second, each line being printed inside its own thread. First, let us write those lines inside a dynamic variable:</p>
 
 <pre><code>SYMBOL: star-wars
 
@@ -886,7 +886,7 @@ freedom to the galaxy...."
 <pre><code>star-wars get ?nth print
 </code></pre>
 
-<p>Note that dynamic variables are shared between threads, so each one had access to star-wars. This is fine, since it is read-only, but the usual caveats about shared memory in a multithreaded settings apply.</p>
+<p>Note that dynamic variables are shared between threads, so each one has access to star-wars. This is fine, since it is read-only, but the usual caveats about shared memory in a multithreaded settings apply.</p>
 
 <p>Let us define a word for the thread workload</p>
 
@@ -902,7 +902,7 @@ freedom to the galaxy...."
 ] each
 </code></pre>
 
-<p>Note the use of <code>curry</code> to send i to the quotation that prints the i-th line. This is almost what we want, but it runs too fast. We need to put the thread in sleep for a while. So we <code>clear</code> the stack that now contains a lot of thread objects and look for a <code>sleep</code> word in the help.</p>
+<p>Note the use of <code>curry</code> to send i to the quotation that prints the i-th line. This is almost what we want, but it runs too fast. We need to put the thread to sleep for a while. So we <code>clear</code> the stack that now contains a lot of thread objects and look for the <code>sleep</code> word in the help.</p>
 
 <p>It turns out that <code>sleep</code> does exactly what we need, but it takes a <strong>duration</strong> object as input. We can create a duration of i seconds with... well <code>i seconds</code>. So we define</p>
 
@@ -925,23 +925,23 @@ freedom to the galaxy...."
 ] each
 </code></pre>
 
-<p>This is good enough for our simple purpose. In serious applications, theads will be long running. In order to make them cooperate, one can use the <code>yield</code> word to signal that the thread has done a unit of work, and other threads can gain control. You also may want to have a look at other words to <code>stop</code>, <code>suspend</code> or <code>resume</code> threads.</p>
+<p>This is good enough for our simple purpose. In serious applications theads will be long-running. In order to make them cooperate, one can use the <code>yield</code> word to signal that the thread has done a unit of work, and other threads can gain control. You also may want to have a look at other words to <code>stop</code>, <code>suspend</code> or <code>resume</code> threads.</p>
 
 <h2>
 <a id="servers-and-furnace" class="anchor" href="#servers-and-furnace" aria-hidden="true"><span class="octicon octicon-link"></span></a>Servers and Furnace</h2>
 
-<p>A very common case for using more than one thread is when writing server applications. When writing network applications, it is common to start a thread for each incoming connection (remember that this are green threads, so they are much more lightweight than OS threads).</p>
+<p>A very common case for using more than one thread is when writing server applications. When writing network applications, it is common to start a thread for each incoming connection (remember that these are green threads, so they are much more lightweight than OS threads).</p>
 
 <p>To simplify this, Factor has the word <code>spawn-server</code>, which works like <code>spawn</code>, but in addition repeatedly spawns the quotation until it returns <code>f</code>. This is still a very low-level word: in reality one has to do much more: listen for TCP connections on a given port, handle connection limits and so on.</p>
 
-<p>The vocabulary <code>io.servers</code> allows to write and configure TCP servers. A server is created with the word <code>&lt;threaded-server&gt;</code>, which requires an encoding as a parameter. Its slots can the be set to configure logging, connection limits, ports and so on. The most important slot to fill is <code>handler</code>, which contains a quotation that is executed for each incoming connection. You can see a very simple example of server with</p>
+<p>The vocabulary <code>io.servers</code> allows to write and configure TCP servers. A server is created with the word <code>&lt;threaded-server&gt;</code>, which requires an encoding as a parameter. Its slots can then be set to configure logging, connection limits, ports and so on. The most important slot to fill is <code>handler</code>, which contains a quotation that is executed for each incoming connection. You can see a very simple example of server with</p>
 
 <pre><code>"resource:extra/time-server/time-server.factor" edit-file
 </code></pre>
 
 <p>We will raise the level of abstraction even more and show how to run a simple HTTP server. First, <code>USE: http.server</code>.</p>
 
-<p>An HTTP application is built out of a <strong>responder</strong>. A responder is essentially a function from a path and an HTTP request to an HTTP response, but more concretely is anything that implements the method <code>call-responder*</code>. Responses are instances of the tuple <code>response</code>, so are usually generated calling <code>&lt;response&gt;</code> and customizing a few slots. Let us write a simple echo responder:</p>
+<p>An HTTP application is built out of a <strong>responder</strong>. A responder is essentially a function from a path and an HTTP request to an HTTP response, but more concretely it is anything that implements the method <code>call-responder*</code>. Responses are instances of the tuple <code>response</code>, so are usually generated calling <code>&lt;response&gt;</code> and customizing a few slots. Let us write a simple echo responder:</p>
 
 <pre><code>TUPLE: echo-responder ;
 
@@ -956,16 +956,16 @@ M: echo-responder call-responder*
     swap concat &gt;&gt;body ;
 </code></pre>
 
-<p>Responders are usually combined to form more complex responders, in order to implement routing and other features. In our simplistic example, we will use just this one responder, and set it globally with</p>
+<p>Responders are usually combined to form more complex responders in order to implement routing and other features. In our simplistic example, we will use just this one responder, and set it globally with</p>
 
 <pre><code>&lt;echo-responder&gt; main-responder set-global
 </code></pre>
 
-<p>Once you have done this, you can start the server with <code>8080 httpd</code>- You can then visit <code>http://localhost:8080/hello/%20/from/%20/factor</code> in your browser to see your first responder in action. You can then stop the server with <code>stop-server</code>.</p>
+<p>Once you have done this, you can start the server with <code>8080 httpd</code>. You can then visit <code>http://localhost:8080/hello/%20/from/%20/factor</code> in your browser to see your first responder in action. You can then stop the server with <code>stop-server</code>.</p>
 
 <p>Now, if this was all that Factor offers to write web applications, it would still be rather low level. In reality, web applications are usually written using a web framework called <strong>Furnace</strong>.</p>
 
-<p>Furnace allows us -among other thing - to write more complex actions using a template language. Actually, there are two template languages shipped by default, and we will use <strong>Chloe</strong>. Furnace allows us to use create <strong>page actions</strong> from Chloe templates, and in order to create a responder we will need to add routing.</p>
+<p>Furnace allows us - among other things - to write more complex actions using a template language. Actually, there are two template languages shipped by default, and we will use <strong>Chloe</strong>. Furnace allows us to use create <strong>page actions</strong> from Chloe templates, and in order to create a responder we will need to add routing.</p>
 
 <p>Let use first investigate a simple example of routing. To do this, we create a special type of responder called a <strong>dispatcher</strong>, that dispatches requests based on path parameters. Let us create a simple dispatcher that will choose between our echo responder and a default responder used to serve static files.</p>
 
@@ -1009,7 +1009,7 @@ TUPLE: hello-dispatcher &lt; dispatcher ;
     "chloe" add-responder ;
 </code></pre>
 
-<p>Most things are the same we have done in the listener. The only difference is that we have added a third responder in our dispatcher, under <code>chloe</code>. This responder is created with a page action. The page action has many slots - say to declare the behaviour of receiving the result of a form - but we only set its template. THis is a pair with the dispatcher class and the relative path of the template file.</p>
+<p>Most things are the same as we have done in the listener. The only difference is that we have added a third responder in our dispatcher, under <code>chloe</code>. This responder is created with a page action. The page action has many slots - say, to declare the behaviour of receiving the result of a form - but we only set its template. This is the pair with the dispatcher class and the relative path of the template file.</p>
 
 <p>In order for all this to work, create a file <code>work/hello-furnace/greetings.xml</code> with a content like</p>
 
@@ -1020,7 +1020,7 @@ TUPLE: hello-dispatcher &lt; dispatcher ;
 &lt;/t:chloe&gt;
 </code></pre>
 
-<p>Reload the <code>hello-furnace</code> vocabulary and <code>&lt;example-responder&gt; main-responder set-global</code>. You should be able to see the results of your efforts under <code>http://localhost:8080/chloe</code>. Notice that there was no need to restart the server, but we can change the main responder dynamically.</p>
+<p>Reload the <code>hello-furnace</code> vocabulary and <code>&lt;example-responder&gt; main-responder set-global</code>. You should be able to see the results of your efforts under <code>http://localhost:8080/chloe</code>. Notice that there was no need to restart the server, we can change the main responder dynamically.</p>
 
 <p>This ends our very brief tour of Furnace. It actually does much more than this: form validation and handling, authentication, logging and more. But this section is already getting too long, and you will have to find out more in the documentation.</p>
 
@@ -1042,7 +1042,7 @@ TUPLE: hello-dispatcher &lt; dispatcher ;
 
 <p>A thread whose quotation starts with <code>receive</code> and calls itself recursively behaves like an actor in Erlang or Akka. We can then use <code>send</code> to send messages to it. Try <code>"hello" over send</code> and then <code>"threading" over send</code>.</p>
 
-<p>Channels are a slightly different abstractions, used for instance in Go and in Clojure core.async. They decouple the sender and the receiver, and are usually used synchronously. For instance, one side can receive from a channel before the some other party sends something to it. This just means that the receiving end yields control to the scheduler, which waits for the send of the message before giving control to the receiver again. This feature sometimes makes it easier to synchronize multithreaded applications.</p>
+<p>Channels are slightly different abstractions, used for instance in Go and in Clojure core.async. They decouple the sender and the receiver, and are usually used synchronously. For instance, one side can receive from a channel before some other party sends something to it. This just means that the receiving end yields control to the scheduler, which waits for a message to be sent before giving control to the receiver again. This feature sometimes makes it easier to synchronize multithreaded applications.</p>
 
 <p>Again, we first use a channel to communicate between threads in the same process. As expected, <code>USE: channels</code>. You can create a channel with <code>&lt;channel&gt;</code>, write to it with <code>to</code> and read from it with <code>from</code>. Note that both operations are blocking: <code>to</code> will block until the value is read in a different thread, and <code>from</code> will block until a value is available.</p>
 
@@ -1052,7 +1052,7 @@ TUPLE: hello-dispatcher &lt; dispatcher ;
 &lt;channel&gt; ch set
 </code></pre>
 
-<p>Then we write on it in a separate thread, in order not to block the UI</p>
+<p>Then we write to it in a separate thread, in order not to block the UI</p>
 
 <pre><code>[ "hello" ch get to ] in-thread
 </code></pre>
@@ -1136,7 +1136,7 @@ f 9000 &lt;inet4&gt; &lt;node-server&gt; start-server
 
 <ul>
 <li>when starting to write Factor, it is <em>very</em> easy to deal a lot with stack shuffling. Learn the <a href="http://docs.factorcode.org/content/article-combinators.html">combinators</a> well, and do not fear to throw away your first examples;</li>
-<li>no definition is too short:  aim for one line;</li>
+<li>no definition is too short: aim for one line;</li>
 <li>the help system and the inspector are your best friends.</li>
 </ul>
 
@@ -1156,10 +1156,10 @@ f 9000 &lt;inet4&gt; &lt;node-server&gt; start-server
 <li>the <code>macros</code> vocabulary implements a form of compile time metaprogramming less general than parsing words, but still quite convenient;</li>
 <li>the <code>models</code> vocabulary lets you implement a form of dataflow programming using objects with observable slots;</li>
 <li>the <code>match</code> vocabulary implements a form of pattern matching;</li>
-<li>the <code>monads</code> vocabulary implements Haskell style monads.</li>
+<li>the <code>monads</code> vocabulary implements Haskell-style monads.</li>
 </ul>
 
-<p>I think these vocabulary are a testament to the power and expressivity of Factor. Happy hacking!</p>
+<p>I think these vocabularies are a testament to the power and expressivity of Factor. Happy hacking!</p>
 
 <pre><code>USE: images.http
 "http://factorcode.org/logo.png" http-image.
