@@ -373,7 +373,7 @@ The word `boa` stands for 'by-order-of-arguments' and is a constructor that fill
 
     : <movie> ( title director actors -- movie ) movie boa ;
 
-In fact, boa constructor are some common, that the above line can be shortened to
+In fact, boa constructor are so common, that the above line can be shortened to
 
     C: <movie> movie
 
