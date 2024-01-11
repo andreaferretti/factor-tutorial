@@ -1,6 +1,8 @@
 A panoramic tour of Factor
 ==========================
 
+NB: This tutorial has been merged in the official documentation of Factor, and is available both [online](https://docs.factorcode.org/content/article-tour.html) and in the Factor integrated help. The version that is present here is not up to date, the official one will be kept up to date as the language evolves. I am leaving this up mostly for historical purposes.
+
 [Factor](http://factorcode.org) is a mature, dynamically typed language based on the concatenative paradigm. Getting started with Factor can be daunting since the concatenative paradigm is different from most mainstream languages. This tutorial will guide you through the basics of Factor so you can appreciate its simplicity and power. I assume you are an experienced programmer familiar with a functional language, and I'll assume you understand concepts like [folding](http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29), [higher-order functions](http://en.wikipedia.org/wiki/Higher-order_function), and [currying](http://en.wikipedia.org/wiki/Currying).
 
 Even though Factor is a niche language, it is mature and has a comprehensive standard library covering tasks from JSON serialization to socket programming and HTML templating. It runs in its own optimized VM with very high performance for a dynamically typed language. It also has a flexible object system, a [FFI](http://en.wikipedia.org/wiki/Foreign_function_interface) to C, and asynchronous I/O that works a bit like Node.js, but with a much simpler model for cooperative multithreading.
